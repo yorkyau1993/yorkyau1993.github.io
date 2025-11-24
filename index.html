@@ -17,16 +17,16 @@
 
         body {
             background-color: var(--win-teal);
-            font-family: "MS Sans Serif", Arial, sans-serif; /* 如果使用者電腦有裝就會用到 */
+            font-family: "MS Sans Serif", Arial, sans-serif;
             margin: 0;
             padding: 20px;
             height: 100vh;
             box-sizing: border-box;
-            overflow: hidden; /* 防止卷軸出現 */
-            image-rendering: pixelated; /* 讓圖片看起來有像素感 */
+            overflow: hidden;
+            image-rendering: pixelated;
         }
 
-        /* --- 通用 Win95 盒子樣式 (凸起效果) --- */
+        /* --- 通用 Win95 盒子樣式 --- */
         .win95-box {
             background-color: var(--win-gray);
             border-top: 2px solid var(--win-border-light);
@@ -36,7 +36,6 @@
             box-shadow: 1px 1px 0 0 var(--win-border-black);
         }
         
-        /* --- 凹陷效果 (用於輸入框或按鈕按下) --- */
         .win95-inset {
             border-top: 2px solid var(--win-border-dark);
             border-left: 2px solid var(--win-border-dark);
@@ -45,25 +44,39 @@
             background-color: #fff;
         }
 
-        /* --- 桌面圖示 --- */
+        /* --- 桌面圖示 (修改版) --- */
         .desktop-icon {
             width: 80px;
             text-align: center;
             color: white;
             cursor: pointer;
             margin-bottom: 20px;
+            /* 確保變成連結後樣式不跑掉 */
+            display: block; 
+            text-decoration: none; 
         }
+        
+        /* 滑鼠移過去的效果 (選取狀態) */
+        .desktop-icon:hover p {
+            background-color: var(--win-dark-blue);
+            outline: 1px dotted #FFFF00; /* 經典的黃色虛線框 */
+        }
+
         .desktop-icon img {
             width: 48px;
             height: 48px;
-            /* 這裡用一個 placeholder 圖片，你可以換成自己的像素圖 */
             background-color: transparent; 
             image-rendering: pixelated;
+            border: none; /* 移除連結圖片可能的預設邊框 */
         }
         .desktop-icon p {
             margin: 5px 0 0 0;
             font-size: 14px;
             text-shadow: 1px 1px #000;
+            /* 讓文字保持白色，不受連結預設藍色影響 */
+            color: white; 
+            display: inline-block; /* 讓背景色只包住文字 */
+            padding: 2px;
         }
 
         /* --- 主視窗 --- */
@@ -73,7 +86,6 @@
             left: 50%;
             transform: translateX(-50%);
             width: 400px;
-            /* 這裡結合了 win95-box 的樣式 */
             background-color: var(--win-gray);
             border-top: 2px solid var(--win-border-light);
             border-left: 2px solid var(--win-border-light);
@@ -134,7 +146,6 @@
             font-size: 16px;
             margin-left: 2px;
             cursor: pointer;
-             /* 繼承 win95-box 的樣式，但要能點擊 */
             background-color: var(--win-gray);
             border-top: 2px solid var(--win-border-light);
             border-left: 2px solid var(--win-border-light);
@@ -144,40 +155,39 @@
         }
         
         .start-btn:active {
-             /* 按下去的效果 */
             border-top: 2px solid var(--win-border-dark);
             border-left: 2px solid var(--win-border-dark);
             border-right: 2px solid var(--win-border-light);
             border-bottom: 2px solid var(--win-border-light);
             box-shadow: none;
-            padding: 5px 9px 3px 11px; /* 微調位置讓它看起來真的陷下去了 */
+            padding: 5px 9px 3px 11px; 
         }
         
         .start-icon {
             width: 20px;
             height: 20px;
             margin-right: 5px;
-            /* 使用一個 base64 的假微軟 logo，你可以換成圖片 */
             background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAE5JREFUOE9jZKAQcAEPxPT/T4Y5IM1IDb/+/8fIRJDm////45P9/x8jE0Ga3334iU/233984pQZ/e7DT3yy///jU0c2o2FwGARDCwAA4cpg4QW78XoAAAAASUVORK5CYII=");
             background-size: cover;
             image-rendering: pixelated;
         }
 
-        /* 一些連結的樣式 */
-        a { color: blue; }
+        /* 視窗內的文字連結 */
+        .window-content a { color: blue; }
     </style>
 </head>
 <body>
 
     <div style="position: absolute; top: 20px; left: 20px;">
-        <div class="desktop-icon" onclick="alert('https://www.threads.com/@yorkwwwwong')">
+        <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="desktop-icon">
             <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
             <p>My CV.txt</p>
-        </div>
-        <div class="desktop-icon" onclick="alert('https://github.com/yorkyau1993?tab=repositories')">
-             <img src="https://win98icons.alexmeub.com/icons/png/network_internet_pcs_sn-0.png" alt="Network">
+        </a>
+        
+        <a href="https://github.com/yorkyau1993?tab=repositories" target="_blank" class="desktop-icon">
+             <img src="https://win98icons.alexmeub.com/icons/png/address_book_user.png" alt="Network">
             <p>GitHub</p>
-        </div>
+        </a>
     </div>
 
     <div class="window" id="readmeWindow">
@@ -201,7 +211,7 @@
             </div>
             
             <div style="text-align: right; margin-top: 20px;">
-                <button class="win95-box" style="padding: 5px 20px; cursor:pointer;" onclick="alert('OK!')">OK</button>
+                <button class="win95-box" style="padding: 5px 20px; cursor:pointer;" onclick="document.getElementById('readmeWindow').style.display='none'">OK</button>
             </div>
         </div>
     </div>
