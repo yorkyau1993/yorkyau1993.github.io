@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>全民防衛生存測驗</title>
+    
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800;900&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* 核心顏色主題 */
+            --theme-bg: #C04000;
+            --theme-text-outside: #FFFFFF;
+            
+            --card-bg: #FFFFFF;
+            --card-text: #000000;
+            --card-border: #000000;
+
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --error-bg: #f8d7da;
+            --error-text: #721c24;
+            
+            --btn-bg: #000000;
+            --btn-text: #FFFFFF;
+            
+            --bad-end-bg: #EE1C25; 
+        }
+
+        body {
+            background-color: var(--theme-bg);
+            color: var(--theme-text-outside);
+            font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+            font-weight: 700; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.5s;
+            -webkit-tap-highlight-color: transparent; /* 移除手機點擊藍框 */
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            position: relative;
+        }
+
+        /* --- 字體特殊設定 --- */
+        #screen-start { font-family: "M PLUS Rounded 1c", "Microsoft JhengHei", sans-serif; }
+        .bad-font-style { font-family: "SimHei", "Microsoft YaHei", "STHeiti", sans-serif !important; }
+
+        /* --- 外部文字樣式 --- */
+        h1 {
+            color: var(--theme-text-outside);
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+            line-height: 1.2;
+            text-align: center;
+        }
+        
+        p.subtitle {
+            color: var(--theme-text-outside);
+            font-size: 1.4rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            text-align: center;
+        }
+
+        /* 樣式切換 */
+        body.bad-end { background-color: var(--bad-end-bg); }
+        
+        .screen { display: none; flex-direction: column; align-items: center; width: 100%; animation: fadeIn 0.4s ease; }
+        .active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 卡片樣式 --- */
+        .card-box {
+            background: var(--card-bg);
+            color: var(--card-text);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid var(--card-border);
+            box-shadow: 6px 6px 0px rgba(0,0,0,0.8);
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        
+        /* Start Screen Inputs */
+        .input-group { margin: 20px 0; text-align: left; }
+        .input-group label { display: block; margin-bottom: 10px; color: var(--card-text); font-size: 1.2rem; font-weight: 900; }
+        .input-name {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            background: #f9f9f9;
+            color: var(--card-text);
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-sizing: border-box;
+            outline: none;
+            font-family: inherit;
+        }
+        .input-name:focus { box-shadow: 3px 3px 0px rgba(0,0,0,1); background: #fff; }
+
+        /* 按鈕樣式 */
+        .btn-action, .btn-start {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: 2px solid var(--card-border);
+            border-radius: 50px;
+            padding: 18px 40px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+            transition: 0.1s;
+            font-family: inherit;
+            /* 禁止文字選取，優化手機體驗 */
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+        .btn-action:hover, .btn-start:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px rgba(0,0,0,0.8);
+            background: #333;
+        }
+        .btn-action:active, .btn-start:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+        }
+        
+        .btn-secondary { background: #fff; color: #000; }
+
+        /* Quiz Screen */
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            color: var(--theme-text-outside);
+            font-weight: bold;
+            padding: 0 5px;
+        }
+
+        .question-card { position: relative; text-align: left; padding: 30px; }
+        .q-cat-label {
+            background: #000; color: #fff; font-size: 1rem; padding: 5px 12px; border-radius: 20px;
+            display: inline-block; margin-bottom: 20px; font-weight: bold;
+        }
+        .q-text { font-size: 1.6rem; line-height: 1.4; font-weight: 900; margin-bottom: 10px; color: #000; }
+        
+        .option-btn {
+            background: #fff; border: 2px solid #000; border-radius: 12px; padding: 18px; color: #000;
+            margin-bottom: 15px; cursor: pointer; transition: 0.1s; position: relative;
+            font-weight: bold; font-size: 1.2rem; box-shadow: 3px 3px 0px rgba(0,0,0,0.1); text-align: left; font-family: inherit;
+            /* 優化手機點擊 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .option-btn:active { background: #f0f0f0; transform: translate(1px, 1px); box-shadow: 1px 1px 0px rgba(0,0,0,0.2); }
+        .option-btn.correct { background: var(--success-bg); border-color: #006400; color: #004d00; }
+        .option-btn.wrong { background: var(--error-bg); border-color: #8b0000; color: #8b0000; }
+
+        .mode-select-btn { flex:1; text-align:center; padding:15px; font-family: inherit; border-radius: 10px; font-size: 1.2rem; }
+
+        /* Result Screen Good */
+        .rank-badge { background: #000; color: #fff; padding: 8px 25px; font-weight: 900; display: inline-block; margin-bottom: 15px; border-radius: 30px; font-size: 1.2rem; }
+        .score-display { font-size: 6rem; font-weight: 900; color: #000; margin: 10px 0; line-height: 1; }
+
+        /* Result Screen Bad */
+        .result-bad { border-width: 4px; box-shadow: 8px 8px 0px rgba(0,0,0,1); }
+        .bad-title { font-size: 3rem; font-weight: 900; margin: 10px 0; letter-spacing: 2px; color: #000; }
+        .bad-score { font-size: 6rem; font-weight: 900; border-bottom: 5px solid #000; display: inline-block; padding: 0 20px; margin: 15px 0; color: #000; }
+        .bad-stamp { 
+            position: absolute; top: 20px; right: 20px; border: 4px solid #000; color: #000; background: rgba(238, 28, 37, 0.2); 
+            padding: 5px 15px; font-weight: 900; transform: rotate(-15deg); font-size: 1.8rem; border-radius: 10px;
+        }
+
+        /* Official Promo */
+        .official-promo {
+            margin-top: 25px; padding: 15px; background: rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 20px; text-align: center;
+        }
+        .official-promo p { margin: 0 0 10px 0; font-size: 1.1rem; color: #fff; font-weight: bold; }
+        .official-btn {
+            display: block; background: #fff; color: #000; text-decoration: none; padding: 15px 10px;
+            border-radius: 50px; font-weight: 900; transition: 0.2s; border: 2px solid #fff; font-size: 1rem; line-height: 1.4;
+        }
+        .official-btn:hover { background: #000; color: #fff; border-color: #fff; transform: translateY(-2px); }
+
+        /* Footer Credits */
+        .credits { margin-top: 30px; text-align: center; color: var(--theme-text-outside); font-weight: bold; }
+        .credits p { margin: 5px 0; font-size: 1.1rem; opacity: 0.9; }
+        .credit-btn {
+            display: inline-block; margin-top: 10px; background: rgba(0,0,0,0.3); color: #fff; text-decoration: none;
+            padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; border: 1px solid rgba(255,255,255,0.5);
+        }
+        .credit-btn:hover { background: #fff; color: #c04000; }
+
+        /* Capture Wrapper - 截圖專用容器 */
+        .export-wrapper {
+            padding: 40px; 
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 20px;
+        }
+
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #000; color: #fff;
+            padding: 15px 30px; font-weight: bold; font-size: 1.1rem; display: none; z-index: 999; border-radius: 30px; border: 2px solid #fff;
+        }
+
+        /* --- 📱 Mobile Adaptive Styles (手機版自適應) --- */
+        @media (max-width: 480px) {
+            h1 { font-size: 2.2rem; }
+            p.subtitle { font-size: 1.1rem; }
+            
+            .container { padding: 15px; }
+            .card-box { padding: 20px; margin-bottom: 15px; }
+            
+            /* 輸入框與按鈕 */
+            .input-group label { font-size: 1rem; }
+            .input-name { font-size: 1.1rem; padding: 12px; }
+            .btn-start, .btn-action { font-size: 1.2rem; padding: 15px 20px; }
+            .mode-select-btn { font-size: 1rem; padding: 12px; }
+
+            /* 測驗區 */
+            .header-info { font-size: 1rem; }
+            .question-card { padding: 20px; }
+            .q-cat-label { font-size: 0.9rem; margin-bottom: 15px; }
+            .q-text { font-size: 1.3rem; margin-bottom: 20px; }
+            .option-btn { font-size: 1rem; padding: 15px; margin-bottom: 10px; }
+
+            /* 結果頁 */
+            .score-display, .bad-score { font-size: 4.5rem; }
+            #rank-good, .bad-title { font-size: 1.8rem; }
+            #msg-good { font-size: 1rem; }
+            .bad-stamp { font-size: 1.2rem; top: 15px; right: 15px; border-width: 3px; }
+            
+            /* 截圖區 (確保手機截圖不會太擠) */
+            .export-wrapper { padding: 20px; }
+
+            /* 官方連結 */
+            .official-btn { font-size: 0.9rem; padding: 12px; }
+            .credit-btn { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div id="screen-start" class="screen active">
+        <h1>🛡️ 全民防衛生存測驗</h1>
+        <p class="subtitle">你具備活下去的知識嗎？</p>
+
+        <div class="card-box login-box">
+            <div class="input-group">
+                <label>請輸入名字 / 代號</label>
+                <input type="text" id="player-name" class="input-name" placeholder="例如：阿吉" maxlength="10">
+            </div>
+
+            <div style="text-align:left; font-size:1.2rem; margin-bottom:20px; font-weight: bold;">
+                <p style="color:#000; margin-bottom: 10px;">選擇題數：</p>
+                <div style="display:flex; gap:15px;">
+                    <button onclick="selectMode(10)" class="option-btn mode-select-btn">10 題</button>
+                    <button onclick="selectMode(20)" class="option-btn mode-select-btn">20 題</button>
+                </div>
+            </div>
+
+            <button id="start-btn" class="btn-start" onclick="startGame()">開始測驗</button>
+        </div>
+
+        <div class="credits">
+            <p>遊戲製作: 阿吉 YORK</p>
+            <a href="https://www.threads.com/@yorkwwwwong" target="_blank" class="credit-btn">
+                👉 追蹤 YORK (Threads)
+            </a>
+        </div>
+    </div>
+
+    <div id="screen-quiz" class="screen">
+        <div class="header-info">
+            <span id="quiz-player-name">Player</span>
+            <span id="quiz-progress">1 / 10</span>
+        </div>
+
+        <div class="card-box question-card">
+            <span class="q-cat-label" id="q-cat">類別</span>
+            <div id="q-text" class="q-text">題目載入中...</div>
+        </div>
+        <div id="options-list" style="width:100%;"></div>
+    </div>
+
+    <div id="screen-result-good" class="screen">
+        <div id="export-good" class="export-wrapper">
+            <h1>🛡️ 全民防衛生存測驗</h1>
+            <div class="card-box result-good" id="card-good">
+                <div class="rank-badge">合格生存者</div>
+                <div class="score-display" id="score-good">100</div>
+                <h2 id="rank-good" style="margin:0; font-size: 2.5rem;">傳奇指揮官</h2>
+                <p style="font-size:1.4rem; margin:10px 0; font-weight: 900; color:#000;">
+                    <span id="name-good" style="border-bottom:3px solid #000; padding-bottom:3px;">XXX</span> 閣下
+                </p>
+                <p id="msg-good" style="font-size:1.2rem; margin:20px 0; font-weight: bold; opacity:0.8;">你的防災意識極佳<br>是國家安全的基石！</p>
+                
+                <div style="border-top:2px solid #000; padding-top:15px; font-size:1.1rem; display:flex; justify-content:space-between; font-weight: bold;">
+                    <span>答對: <b id="correct-good">0</b></span>
+                    <span>耗時: <b id="time-good">0s</b></span>
+                </div>
+                <div style="font-size:0.9rem; margin-top:15px; opacity: 0.6;">全民防衛生存測驗認證</div>
+            </div>
+            <div class="credits" style="margin-top: 10px;">
+                <p>遊戲製作: 阿吉 YORK</p>
+            </div>
+        </div>
+        <button class="btn-action" onclick="downloadImage('export-good', '#C04000')">📸 下載戰報圖片</button>
+        <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新測驗</button>
+
+        <div class="official-promo">
+            <p>🛡️ 臺灣全民安全宣導</p>
+            <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="official-btn">
+                📖 中華民國國防部全民防衛動員署<br>當危機來臨時：臺灣全民安全指引
+            </a>
+        </div>
+        
+        <div class="credits">
+            <a href="https://www.threads.com/@yorkwwwwong" target="_blank" class="credit-btn">追蹤 YORK</a>
+        </div>
+    </div>
+
+    <div id="screen-result-bad" class="screen bad-font-style">
+        <div id="export-bad" class="export-wrapper">
+            <h1 class="bad-font-style">🛡️ 全民防卫生存测验</h1> <div class="card-box result-bad" id="card-bad">
+                <div class="bad-stamp">统一功臣</div>
+                <div style="font-size:1.5rem; letter-spacing:1px; margin-bottom:10px; font-weight: 900; color:#000;">灾难生存智商指数</div>
+                <div class="bad-score" id="score-bad">40</div>
+                <div class="bad-title">高度嘉奖</div>
+                <p style="font-size:1.3rem; line-height:1.6; margin:25px 0; font-weight: 900; color:#000;">
+                    <span id="name-bad" style="border-bottom:4px solid #000; padding-bottom: 5px;">XXX</span> 同志：<br><br>
+                    感谢您对祖国统一大业的贡献！<br>
+                    您极度薄弱的防灾意识，<br>
+                    将为我军节省大量的攻台弹药。<br>
+                    <strong style="font-size:1.6rem; margin-top:15px; display:block; text-decoration: underline;">请继续保持无知，坐等解放！</strong>
+                </p>
+                <div style="font-size:1rem; margin-top:20px; font-weight: bold;">战区接收工作委员会 致赠</div>
+            </div>
+            <div class="credits" style="margin-top: 10px;">
+                <p>游戏制作: 阿吉 YORK</p>
+            </div>
+        </div>
+        <button class="btn-action" onclick="downloadImage('export-bad', '#EE1C25')">📸 下载感谢状 (图片)</button>
+        <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新学习</button>
+
+        <div class="official-promo">
+            <p>🇹🇼 只有这本能救你 (点我补课)</p>
+            <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="official-btn">
+                📖 中華民國國防部全民防衛動員署<br>當危機來臨時：臺灣全民安全指引
+            </a>
+        </div>
+        
+        <div class="credits">
+            <a href="https://www.threads.com/@yorkwwwwong" target="_blank" class="credit-btn">追踪 YORK</a>
+        </div>
+    </div>
+
+</div>
+
+<div id="toast" class="toast">圖片已下載！</div>
+
+<script>
+    // --- 題庫 (邏輯誘答 w) ---
+    const fullDB = [
+        // 基礎與觀念
+        { c: "基礎知識", q: "平時儲備物資的主要目的為何？", a: "讓危機時不慌亂、確保基本生存需求", w: ["為了應付政府檢查", "為了囤積居奇高價轉賣", "因為錢沒地方花"] },
+        { c: "基礎知識", q: "面對危機時，強調「有準備，更安全」是為了？", a: "防止恐慌、提升生存能力", w: ["嚇唬民眾", "增加購物消費", "單純的口號"] },
+        { c: "居家儲備", q: "每人每日至少應準備多少飲用水？", a: "3公升", w: ["500cc (一瓶水)", "10公升 (太重)", "有喝飲料就好"] },
+        { c: "居家儲備", q: "關於「循環儲備」的概念，下列何者正確？", a: "日常多買一點，先買先用，隨時回補", w: ["買來鎖在倉庫直到過期", "只有颱風天去搶購", "只買罐頭不買其他的"] },
+        { c: "居家儲備", q: "停電後，下列哪個設備通常會「失效」？", a: "電子鎖與電梯", w: ["傳統機械鎖", "瓦斯爐", "手電筒"] },
+        
+        // 避難包
+        { c: "避難包", q: "緊急避難包應放在哪裡？", a: "玄關或大門口等隨手可得處", w: ["臥室衣櫃最深處", "廚房冰箱裡", "陽台雜物堆"] },
+        { c: "避難包", q: "男性避難包建議重量上限？", a: "15公斤", w: ["5公斤", "30公斤", "愈重愈好"] },
+        { c: "避難包", q: "避難包內準備「收音機」是為了？", a: "網路斷訊時接收政府資訊", w: ["無聊聽音樂", "發出求救訊號", "當作行動電源"] },
+        
+        // 警報與應變
+        { c: "警報避難", q: "防空警報「解除」的聲音特徵？", a: "一長聲，持續90秒", w: ["急促短聲", "完全沒聲音", "只有廣播人聲"] },
+        { c: "警報避難", q: "戶外遭遇空襲爆炸時的姿勢？", a: "背向爆炸、趴下、遮眼掩耳、嘴微張", w: ["拿手機錄影", "站立不動", "拔腿狂奔"] },
+        { c: "警報避難", q: "聽到海嘯警報，應往哪裡跑？", a: "往高處、往內陸移動", w: ["去海邊看浪", "躲在地下室", "開車上高速公路"] },
+        
+        // 急救
+        { c: "急救互救", q: "大量出血時最優先的止血法？", a: "直接加壓止血", w: ["綁止血帶", "沖冷水", "抬高患肢"] },
+        { c: "急救互救", q: "懷疑脊椎骨折時？", a: "不可隨意移動，等待救援", w: ["立刻揹起來送醫", "幫他按摩", "扶他坐起來"] },
+        { c: "急救互救", q: "毒氣(化學災害)外洩時，往哪避難？", a: "上風處", w: ["下風處", "低窪處", "地下室"] },
+
+        // 戰時與資安
+        { c: "軍事應變", q: "看到不明武裝部隊時？", a: "保持冷靜、不挑釁、離開並通報", w: ["拍照上傳打卡", "上前詢問", "嘗試攻擊"] },
+        { c: "軍事應變", q: "為何不能拍攝我軍動態上傳？", a: "會暴露位置，資敵且違法", w: ["因為阿兵哥害羞", "手機畫質太差", "流量不夠"] },
+        { c: "資訊安全", q: "辨識假訊息的「3不1要」，1要是指？", a: "要查證", w: ["要轉傳", "要按讚", "要恐慌"] },
+        { c: "資訊安全", q: "路邊不明 QR Code 可以掃嗎？", a: "不可，可能含惡意程式", w: ["可以，可能是優惠券", "看圖片漂亮就掃", "掃完立刻關掉就好"] },
+        { c: "民生居住", q: "停電時冰箱應如何處置？", a: "少開門，維持內部低溫", w: ["打開通風", "拔掉插頭", "把食物拿出來"] }
+    ];
+
+    let playerName = "";
+    let questionCount = 10;
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let startTime = 0;
+    let selectedMode = 0;
+
+    function selectMode(n) {
+        questionCount = n;
+        document.querySelectorAll('.mode-select-btn').forEach(b => {
+            b.style.background = '#fff';
+            b.style.color = '#000';
+            b.style.borderColor = '#000';
+        });
+        event.target.style.background = '#000';
+        event.target.style.color = '#fff';
+        selectedMode = n;
+    }
+
+    function startGame() {
+        const input = document.getElementById('player-name');
+        if (!input.value.trim()) {
+            alert("請輸入名字才能開始！");
+            return;
+        }
+        if (selectedMode === 0) selectMode(10);
+
+        playerName = input.value.trim();
+        document.getElementById('quiz-player-name').innerText = playerName;
+
+        // 準備題目 (DEMO用)
+        let pool = JSON.parse(JSON.stringify(fullDB));
+        while(pool.length < questionCount) pool = pool.concat(fullDB);
+        
+        currentQuestions = pool.sort(() => Math.random() - 0.5).slice(0, questionCount);
+        
+        currentIndex = 0;
+        score = 0;
+        startTime = Date.now();
+
+        showScreen('screen-quiz');
+        loadQuestion();
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function loadQuestion() {
+        const qData = currentQuestions[currentIndex];
+        document.getElementById('quiz-progress').innerText = `${currentIndex + 1} / ${questionCount}`;
+        document.getElementById('q-cat').innerText = qData.c;
+        document.getElementById('q-text').innerText = qData.q;
+
+        let opts = [{t: qData.a, correct: true}];
+        let wrongs = qData.w ? [...qData.w] : ["錯誤選項A", "錯誤選項B", "錯誤選項C"];
+        wrongs.sort(() => Math.random() - 0.5).slice(0, 3).forEach(w => opts.push({t: w, correct: false}));
+        opts.sort(() => Math.random() - 0.5);
+
+        const list = document.getElementById('options-list');
+        list.innerHTML = "";
+        opts.forEach(opt => {
+            let btn = document.createElement('div');
+            btn.className = 'option-btn';
+            btn.innerText = opt.t;
+            btn.onclick = () => checkAnswer(btn, opt.correct, qData.a);
+            list.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(btn, isCorrect, correctTxt) {
+        const all = document.querySelectorAll('.option-btn');
+        all.forEach(b => b.style.pointerEvents = 'none');
+
+        if(isCorrect) {
+            btn.classList.add('correct');
+            score++;
+        } else {
+            btn.classList.add('wrong');
+            all.forEach(b => {
+                if(b.innerText === correctTxt) b.classList.add('correct');
+            });
+        }
+
+        setTimeout(() => {
+            currentIndex++;
+            if(currentIndex < questionCount) loadQuestion();
+            else endGame();
+        }, 1500);
+    }
+
+    function endGame() {
+        let finalScore = Math.round((score / questionCount) * 100);
+        let timeUsed = Math.floor((Date.now() - startTime) / 1000);
+
+        if (finalScore >= 60) {
+            // Good
+            showScreen('screen-result-good');
+            document.getElementById('score-good').innerText = finalScore;
+            document.getElementById('correct-good').innerText = score;
+            document.getElementById('time-good').innerText = timeUsed + "s";
+            document.getElementById('name-good').innerText = playerName; 
+            
+            let rank = "生存者";
+            if(finalScore === 100) rank = "傳奇指揮官";
+            else if(finalScore >= 80) rank = "生存專家";
+            document.getElementById('rank-good').innerText = rank;
+
+        } else {
+            // Bad (Satire)
+            document.body.classList.add('bad-end'); 
+            showScreen('screen-result-bad');
+            document.getElementById('score-bad').innerText = finalScore;
+            document.getElementById('name-bad').innerText = playerName;
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    function downloadImage(elementId, bgColor) {
+        const element = document.getElementById(elementId);
+        const btn = event.target;
+        const originalText = btn.innerText;
+        
+        btn.innerText = "🔄 圖片生成中...";
+        btn.disabled = true;
+
+        // 手機版截圖時，暫時將寬度鎖定為 600px 以獲得清晰的海報比例
+        const originalWidth = element.style.width;
+        element.style.width = "600px"; 
+
+        html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: bgColor,
+            windowWidth: 1200 // 虛擬視窗寬度，確保截圖不跑版
+        }).then(canvas => {
+            element.style.width = originalWidth; // 恢復原狀
+
+            const link = document.createElement('a');
+            link.download = `生存測驗戰報_${playerName}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            btn.innerText = originalText;
+            btn.disabled = false;
+            showToast("圖片已下載！");
+        }).catch(err => {
+            console.error("生成失敗:", err);
+            element.style.width = originalWidth;
+            btn.innerText = "❌ 失敗";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }, 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
