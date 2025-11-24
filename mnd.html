@@ -13,18 +13,22 @@
 
     <style>
         :root {
-            /* 核心顏色 */
+            /* 核心顏色主題 */
             --theme-bg: #C04000;
             --theme-text-outside: #FFFFFF;
+            
             --card-bg: #FFFFFF;
             --card-text: #000000;
             --card-border: #000000;
+
             --success-bg: #d4edda;
             --success-text: #155724;
             --error-bg: #f8d7da;
             --error-text: #721c24;
+            
             --btn-bg: #000000;
             --btn-text: #FFFFFF;
+            
             --bad-end-bg: #EE1C25; 
         }
 
@@ -53,9 +57,11 @@
             position: relative;
         }
 
+        /* --- 字體特殊設定 --- */
         #screen-start { font-family: "M PLUS Rounded 1c", "Microsoft JhengHei", sans-serif; }
         .bad-font-style { font-family: "SimHei", "Microsoft YaHei", "STHeiti", sans-serif !important; }
 
+        /* --- 外部文字樣式 --- */
         h1 {
             color: var(--theme-text-outside);
             font-size: 2.8rem;
@@ -74,12 +80,14 @@
             text-align: center;
         }
 
+        /* 樣式切換 */
         body.bad-end { background-color: var(--bad-end-bg); }
         
         .screen { display: none; flex-direction: column; align-items: center; width: 100%; animation: fadeIn 0.4s ease; }
         .active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* --- 卡片樣式 --- */
         .card-box {
             background: var(--card-bg);
             color: var(--card-text);
@@ -94,28 +102,64 @@
             font-size: 1.1rem;
         }
         
+        /* Start Screen Inputs */
         .input-group { margin: 20px 0; text-align: left; }
         .input-group label { display: block; margin-bottom: 10px; color: var(--card-text); font-size: 1.2rem; font-weight: 900; }
         .input-name {
-            width: 100%; padding: 15px; border: 2px solid var(--card-border); border-radius: 10px;
-            background: #f9f9f9; color: var(--card-text); font-size: 1.3rem; font-weight: bold;
-            box-sizing: border-box; outline: none; font-family: inherit;
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            background: #f9f9f9;
+            color: var(--card-text);
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-sizing: border-box;
+            outline: none;
+            font-family: inherit;
         }
         .input-name:focus { box-shadow: 3px 3px 0px rgba(0,0,0,1); background: #fff; }
 
+        /* 按鈕樣式 */
         .btn-action, .btn-start {
-            background: var(--btn-bg); color: var(--btn-text); border: 2px solid var(--card-border); border-radius: 50px;
-            padding: 18px 40px; font-size: 1.4rem; font-weight: 900; cursor: pointer; width: 100%; margin-top: 15px;
-            box-shadow: 4px 4px 0px rgba(0,0,0,0.5); transition: 0.1s; font-family: inherit; user-select: none;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: 2px solid var(--card-border);
+            border-radius: 50px;
+            padding: 18px 40px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+            transition: 0.1s;
+            font-family: inherit;
+            user-select: none; 
+            -webkit-user-select: none;
         }
-        .btn-action:hover, .btn-start:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px rgba(0,0,0,0.8); background: #333; }
-        .btn-action:active, .btn-start:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px rgba(0,0,0,0.8); }
+        .btn-action:hover, .btn-start:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px rgba(0,0,0,0.8);
+            background: #333;
+        }
+        .btn-action:active, .btn-start:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+        }
         
         .btn-secondary { background: #fff; color: #000; }
 
+        /* Quiz Screen */
         .header-info {
-            display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px;
-            font-size: 1.2rem; color: var(--theme-text-outside); font-weight: bold; padding: 0 5px;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            color: var(--theme-text-outside);
+            font-weight: bold;
+            padding: 0 5px;
         }
 
         .question-card { position: relative; text-align: left; padding: 30px; }
@@ -137,9 +181,11 @@
 
         .mode-select-btn { flex:1; text-align:center; padding:15px; font-family: inherit; border-radius: 10px; font-size: 1.2rem; }
 
+        /* Result Screen Good */
         .rank-badge { background: #000; color: #fff; padding: 8px 25px; font-weight: 900; display: inline-block; margin-bottom: 15px; border-radius: 30px; font-size: 1.2rem; }
         .score-display { font-size: 6rem; font-weight: 900; color: #000; margin: 10px 0; line-height: 1; }
 
+        /* Result Screen Bad */
         .result-bad { border-width: 4px; box-shadow: 8px 8px 0px rgba(0,0,0,1); }
         .bad-title { font-size: 3rem; font-weight: 900; margin: 10px 0; letter-spacing: 2px; color: #000; }
         .bad-score { font-size: 6rem; font-weight: 900; border-bottom: 5px solid #000; display: inline-block; padding: 0 20px; margin: 15px 0; color: #000; }
@@ -148,6 +194,7 @@
             padding: 5px 15px; font-weight: 900; transform: rotate(-15deg); font-size: 1.8rem; border-radius: 10px;
         }
 
+        /* Official Promo */
         .official-promo {
             margin-top: 25px; padding: 15px; background: rgba(0, 0, 0, 0.25);
             border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 20px; text-align: center;
@@ -159,6 +206,7 @@
         }
         .official-btn:hover { background: #000; color: #fff; border-color: #fff; transform: translateY(-2px); }
 
+        /* Footer Credits */
         .credits { margin-top: 30px; text-align: center; color: var(--theme-text-outside); font-weight: bold; }
         .credits p { margin: 5px 0; font-size: 1.1rem; opacity: 0.9; }
         .credit-btn {
@@ -167,6 +215,7 @@
         }
         .credit-btn:hover { background: #fff; color: #c04000; }
 
+        /* Capture Wrapper */
         .export-wrapper { padding: 40px; width: 100%; box-sizing: border-box; border-radius: 20px; }
 
         .toast {
@@ -186,6 +235,7 @@
         .review-ans { color: #006400; font-weight: bold; font-size: 1.1rem; margin-top: 5px; padding: 8px; background: #d4edda; border-radius: 5px; }
         .review-ans::before { content: "✔ 正解："; }
 
+        /* --- 📱 Mobile Adaptive Styles --- */
         @media (max-width: 480px) {
             h1 { font-size: 2.2rem; }
             p.subtitle { font-size: 1.1rem; }
@@ -213,7 +263,6 @@
 <body>
 
 <div class="container">
-    
     <div id="screen-start" class="screen active">
         <h1>🛡️ 全民防衛生存測驗</h1>
         <p class="subtitle">你具備活下去的知識嗎？</p>
@@ -338,8 +387,7 @@
         <h1>📖 錯題解析</h1>
         <p class="subtitle">記住這些知識，關鍵時刻能救命。</p>
         
-        <div id="review-list" class="review-list">
-            </div>
+        <div id="review-list" class="review-list"></div>
 
         <button class="btn-action btn-secondary" onclick="backToResult()">🔙 返回戰報頁面</button>
     </div>
@@ -349,6 +397,14 @@
 <div id="toast" class="toast">圖片已下載！</div>
 
 <script>
+    // --- 1. 設定：Google 表單數據傳送 ---
+    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdW4Pn6_2RY0Fjdm4VjtnRBLsyBOwCHXxN6Ydt8uCb9Htb-CQ/formResponse";
+    const ENTRY_ID_NAME = "entry.2026948411";
+    const ENTRY_ID_SCORE = "entry.613612201";
+    const ENTRY_ID_RANK = "entry.1097894505";
+    const ENTRY_ID_WRONG = "entry.2029704736";
+    const ENTRY_ID_TIME = "entry.603554255";
+
     // --- 130 題完整題庫 ---
     const fullDB = [
         { c: "基礎知識", q: "《當危機來臨時》手冊的主要目的為何？", a: "保障民眾在危機來臨時能自救、互救、正確應變", w: ["教導民眾如何購買槍枝", "讓政府全權負責救援", "推廣觀光旅遊"] },
@@ -486,11 +542,31 @@
     let playerName = "";
     let questionCount = 10;
     let currentQuestions = [];
-    let wrongAnswers = []; // 儲存錯題
+    let wrongAnswers = [];
     let currentIndex = 0;
     let score = 0;
     let startTime = 0;
     let selectedMode = 0;
+
+    function sendData(name, score, time, rank, wrongList) {
+        const formData = new FormData();
+        formData.append(ENTRY_ID_NAME, name);
+        formData.append(ENTRY_ID_SCORE, score);
+        formData.append(ENTRY_ID_TIME, time);
+        formData.append(ENTRY_ID_RANK, rank);
+        let wrongText = wrongList.length > 0 ? wrongList.map(w => w.q).join(" | ") : "無 (全對)";
+        formData.append(ENTRY_ID_WRONG, wrongText);
+
+        fetch(GOOGLE_FORM_URL, {
+            method: "POST",
+            body: formData,
+            mode: "no-cors"
+        }).then(() => {
+            console.log("Data Sent");
+        }).catch(err => {
+            console.error("Data Error", err);
+        });
+    }
 
     function selectMode(n) {
         questionCount = n;
@@ -515,7 +591,6 @@
         playerName = input.value.trim();
         document.getElementById('quiz-player-name').innerText = playerName;
 
-        // 初始化
         let pool = JSON.parse(JSON.stringify(fullDB));
         while(pool.length < questionCount) pool = pool.concat(fullDB);
         
@@ -541,7 +616,7 @@
         document.getElementById('q-text').innerText = qData.q;
 
         let opts = [{t: qData.a, correct: true}];
-        let wrongs = qData.w ? [...qData.w] : ["錯誤選項A", "錯誤選項B", "錯誤選項C"];
+        let wrongs = qData.w ? [...qData.w] : ["錯誤選項"];
         wrongs.sort(() => Math.random() - 0.5).slice(0, 3).forEach(w => opts.push({t: w, correct: false}));
         opts.sort(() => Math.random() - 0.5);
 
@@ -565,7 +640,6 @@
             score++;
         } else {
             btn.classList.add('wrong');
-            // 記錄錯題
             wrongAnswers.push(currentQuestions[currentIndex]);
             all.forEach(b => {
                 if(b.innerText === correctTxt) b.classList.add('correct');
@@ -582,6 +656,14 @@
     function endGame() {
         let finalScore = Math.round((score / questionCount) * 100);
         let timeUsed = Math.floor((Date.now() - startTime) / 1000);
+        let finalRank = "";
+
+        if (finalScore === 100) finalRank = "傳奇指揮官";
+        else if (finalScore >= 80) finalRank = "生存專家";
+        else if (finalScore >= 60) finalRank = "生存者";
+        else finalRank = "統一功臣";
+
+        sendData(playerName, finalScore, timeUsed, finalRank, wrongAnswers);
 
         if (finalScore >= 60) {
             showScreen('screen-result-good');
@@ -589,10 +671,7 @@
             document.getElementById('correct-good').innerText = score;
             document.getElementById('time-good').innerText = timeUsed + "s";
             document.getElementById('name-good').innerText = playerName; 
-            let rank = "生存者";
-            if(finalScore === 100) rank = "傳奇指揮官";
-            else if(finalScore >= 80) rank = "生存專家";
-            document.getElementById('rank-good').innerText = rank;
+            document.getElementById('rank-good').innerText = finalRank;
         } else {
             document.body.classList.add('bad-end'); 
             showScreen('screen-result-bad');
@@ -601,16 +680,13 @@
         }
     }
 
-    // 顯示錯題解析
     function showReview() {
         if(wrongAnswers.length === 0) {
             showToast("🎉 完美全對！無需複習！");
             return;
         }
-
         const list = document.getElementById('review-list');
         list.innerHTML = "";
-
         wrongAnswers.forEach((item, index) => {
             let html = `
                 <div class="review-item">
@@ -621,12 +697,10 @@
             `;
             list.innerHTML += html;
         });
-
         showScreen('screen-review');
     }
 
     function backToResult() {
-        // 根據是否有 bad-end class 判斷回到哪個結果頁
         if(document.body.classList.contains('bad-end')) {
             showScreen('screen-result-bad');
         } else {
@@ -645,7 +719,6 @@
         const element = document.getElementById(elementId);
         const btn = event.target;
         const originalText = btn.innerText;
-        
         btn.innerText = "🔄 圖片生成中...";
         btn.disabled = true;
 
