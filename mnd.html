@@ -13,22 +13,18 @@
 
     <style>
         :root {
-            /* 核心顏色主題 */
+            /* 核心顏色 */
             --theme-bg: #C04000;
             --theme-text-outside: #FFFFFF;
-            
             --card-bg: #FFFFFF;
             --card-text: #000000;
             --card-border: #000000;
-
             --success-bg: #d4edda;
             --success-text: #155724;
             --error-bg: #f8d7da;
             --error-text: #721c24;
-            
             --btn-bg: #000000;
             --btn-text: #FFFFFF;
-            
             --bad-end-bg: #EE1C25; 
         }
 
@@ -57,11 +53,9 @@
             position: relative;
         }
 
-        /* --- 字體特殊設定 --- */
         #screen-start { font-family: "M PLUS Rounded 1c", "Microsoft JhengHei", sans-serif; }
         .bad-font-style { font-family: "SimHei", "Microsoft YaHei", "STHeiti", sans-serif !important; }
 
-        /* --- 外部文字樣式 --- */
         h1 {
             color: var(--theme-text-outside);
             font-size: 2.8rem;
@@ -80,14 +74,12 @@
             text-align: center;
         }
 
-        /* 樣式切換 */
         body.bad-end { background-color: var(--bad-end-bg); }
         
         .screen { display: none; flex-direction: column; align-items: center; width: 100%; animation: fadeIn 0.4s ease; }
         .active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 卡片樣式 --- */
         .card-box {
             background: var(--card-bg);
             color: var(--card-text);
@@ -102,64 +94,28 @@
             font-size: 1.1rem;
         }
         
-        /* Start Screen Inputs */
         .input-group { margin: 20px 0; text-align: left; }
         .input-group label { display: block; margin-bottom: 10px; color: var(--card-text); font-size: 1.2rem; font-weight: 900; }
         .input-name {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid var(--card-border);
-            border-radius: 10px;
-            background: #f9f9f9;
-            color: var(--card-text);
-            font-size: 1.3rem;
-            font-weight: bold;
-            box-sizing: border-box;
-            outline: none;
-            font-family: inherit;
+            width: 100%; padding: 15px; border: 2px solid var(--card-border); border-radius: 10px;
+            background: #f9f9f9; color: var(--card-text); font-size: 1.3rem; font-weight: bold;
+            box-sizing: border-box; outline: none; font-family: inherit;
         }
         .input-name:focus { box-shadow: 3px 3px 0px rgba(0,0,0,1); background: #fff; }
 
-        /* 按鈕樣式 */
         .btn-action, .btn-start {
-            background: var(--btn-bg);
-            color: var(--btn-text);
-            border: 2px solid var(--card-border);
-            border-radius: 50px;
-            padding: 18px 40px;
-            font-size: 1.4rem;
-            font-weight: 900;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
-            transition: 0.1s;
-            font-family: inherit;
-            user-select: none; 
-            -webkit-user-select: none;
+            background: var(--btn-bg); color: var(--btn-text); border: 2px solid var(--card-border); border-radius: 50px;
+            padding: 18px 40px; font-size: 1.4rem; font-weight: 900; cursor: pointer; width: 100%; margin-top: 15px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.5); transition: 0.1s; font-family: inherit; user-select: none;
         }
-        .btn-action:hover, .btn-start:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0px rgba(0,0,0,0.8);
-            background: #333;
-        }
-        .btn-action:active, .btn-start:active {
-            transform: translate(2px, 2px);
-            box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
-        }
+        .btn-action:hover, .btn-start:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px rgba(0,0,0,0.8); background: #333; }
+        .btn-action:active, .btn-start:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px rgba(0,0,0,0.8); }
         
         .btn-secondary { background: #fff; color: #000; }
 
-        /* Quiz Screen */
         .header-info {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin-bottom: 10px;
-            font-size: 1.2rem;
-            color: var(--theme-text-outside);
-            font-weight: bold;
-            padding: 0 5px;
+            display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px;
+            font-size: 1.2rem; color: var(--theme-text-outside); font-weight: bold; padding: 0 5px;
         }
 
         .question-card { position: relative; text-align: left; padding: 30px; }
@@ -181,11 +137,9 @@
 
         .mode-select-btn { flex:1; text-align:center; padding:15px; font-family: inherit; border-radius: 10px; font-size: 1.2rem; }
 
-        /* Result Screen Good */
         .rank-badge { background: #000; color: #fff; padding: 8px 25px; font-weight: 900; display: inline-block; margin-bottom: 15px; border-radius: 30px; font-size: 1.2rem; }
         .score-display { font-size: 6rem; font-weight: 900; color: #000; margin: 10px 0; line-height: 1; }
 
-        /* Result Screen Bad */
         .result-bad { border-width: 4px; box-shadow: 8px 8px 0px rgba(0,0,0,1); }
         .bad-title { font-size: 3rem; font-weight: 900; margin: 10px 0; letter-spacing: 2px; color: #000; }
         .bad-score { font-size: 6rem; font-weight: 900; border-bottom: 5px solid #000; display: inline-block; padding: 0 20px; margin: 15px 0; color: #000; }
@@ -194,7 +148,6 @@
             padding: 5px 15px; font-weight: 900; transform: rotate(-15deg); font-size: 1.8rem; border-radius: 10px;
         }
 
-        /* Official Promo */
         .official-promo {
             margin-top: 25px; padding: 15px; background: rgba(0, 0, 0, 0.25);
             border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 20px; text-align: center;
@@ -206,7 +159,6 @@
         }
         .official-btn:hover { background: #000; color: #fff; border-color: #fff; transform: translateY(-2px); }
 
-        /* Footer Credits */
         .credits { margin-top: 30px; text-align: center; color: var(--theme-text-outside); font-weight: bold; }
         .credits p { margin: 5px 0; font-size: 1.1rem; opacity: 0.9; }
         .credit-btn {
@@ -215,7 +167,6 @@
         }
         .credit-btn:hover { background: #fff; color: #c04000; }
 
-        /* Capture Wrapper */
         .export-wrapper { padding: 40px; width: 100%; box-sizing: border-box; border-radius: 20px; }
 
         .toast {
@@ -223,41 +174,39 @@
             padding: 15px 30px; font-weight: bold; font-size: 1.1rem; display: none; z-index: 999; border-radius: 30px; border: 2px solid #fff;
         }
 
-        /* --- 📱 Mobile Adaptive Styles (手機版自適應重點) --- */
+        /* --- 錯題解析頁面樣式 --- */
+        #screen-review { text-align: left; }
+        .review-list { width: 100%; margin-bottom: 20px; }
+        .review-item {
+            background: #fff; border: 2px solid #000; border-radius: 10px; padding: 20px; margin-bottom: 15px; color: #000;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+        }
+        .review-q { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; line-height: 1.4; }
+        .review-label { display: inline-block; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-bottom: 5px; margin-right: 5px;}
+        .review-ans { color: #006400; font-weight: bold; font-size: 1.1rem; margin-top: 5px; padding: 8px; background: #d4edda; border-radius: 5px; }
+        .review-ans::before { content: "✔ 正解："; }
+
         @media (max-width: 480px) {
             h1 { font-size: 2.2rem; }
             p.subtitle { font-size: 1.1rem; }
-            
             .container { padding: 15px; }
-            
-            /* 卡片間距縮小 */
             .card-box { padding: 20px; margin-bottom: 15px; }
-            
-            /* 按鈕與輸入框 */
             .input-group label { font-size: 1rem; }
             .input-name { font-size: 1.1rem; padding: 12px; }
-            .btn-start, .btn-action { font-size: 1.1rem; padding: 15px; }
+            .btn-start, .btn-action { font-size: 1.2rem; padding: 15px 20px; }
             .mode-select-btn { font-size: 1rem; padding: 12px; }
-
-            /* 測驗介面 */
             .header-info { font-size: 1rem; }
             .question-card { padding: 20px; }
             .q-cat-label { font-size: 0.9rem; margin-bottom: 15px; }
             .q-text { font-size: 1.3rem; margin-bottom: 20px; }
-            .option-btn { font-size: 1.1rem; padding: 15px; margin-bottom: 10px; }
-
-            /* 結果頁面 (防止字太大撐爆) */
-            .score-display, .bad-score { font-size: 4.5rem; }
+            .option-btn { font-size: 1rem; padding: 15px; margin-bottom: 10px; }
+            .score-display, .bad-score { font-size: 4rem; }
             #rank-good, .bad-title { font-size: 1.8rem; }
-            #msg-good { font-size: 1.1rem; }
+            #msg-good { font-size: 1rem; }
             .bad-stamp { font-size: 1.2rem; top: 15px; right: 15px; border-width: 3px; }
-            
-            /* 截圖區在手機瀏覽時減少內距，但下載時會還原 */
-            .export-wrapper { padding: 10px; } 
-
-            /* 官方連結 */
-            .official-btn { font-size: 0.95rem; padding: 12px; }
-            .credit-btn { font-size: 0.85rem; }
+            .export-wrapper { padding: 20px; }
+            .official-btn { font-size: 0.9rem; padding: 12px; }
+            .credit-btn { font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -332,6 +281,7 @@
         </div>
 
         <button class="btn-action" onclick="downloadImage('export-good', '#C04000')">📸 下載戰報圖片</button>
+        <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
         <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新測驗</button>
 
         <div class="official-promo">
@@ -369,6 +319,7 @@
         </div>
 
         <button class="btn-action" onclick="downloadImage('export-bad', '#EE1C25')">📸 下载感谢状 (图片)</button>
+        <button class="btn-action btn-secondary" onclick="showReview()">📖 知错能改 (查看解析)</button>
         <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新学习</button>
 
         <div class="official-promo">
@@ -383,14 +334,23 @@
         </div>
     </div>
 
+    <div id="screen-review" class="screen">
+        <h1>📖 錯題解析</h1>
+        <p class="subtitle">記住這些知識，關鍵時刻能救命。</p>
+        
+        <div id="review-list" class="review-list">
+            </div>
+
+        <button class="btn-action btn-secondary" onclick="backToResult()">🔙 返回戰報頁面</button>
+    </div>
+
 </div>
 
 <div id="toast" class="toast">圖片已下載！</div>
 
 <script>
-    // --- 100 題完整題庫 (含誘答) ---
+    // --- 130 題完整題庫 ---
     const fullDB = [
-        // 1. 基礎知識
         { c: "基礎知識", q: "《當危機來臨時》手冊的主要目的為何？", a: "保障民眾在危機來臨時能自救、互救、正確應變", w: ["教導民眾如何購買槍枝", "讓政府全權負責救援", "推廣觀光旅遊"] },
         { c: "基礎知識", q: "台灣常見的自然災害有哪些？", a: "地震、颱風、豪雨、土石流、乾旱", w: ["龍捲風、暴風雪、火山爆發", "沙漠化、冰雹、極光", "海嘯、龍捲風、沙塵暴"] },
         { c: "基礎知識", q: "為何需要平時儲備物資？", a: "讓危機時不慌亂、確保生命維持基本需求", w: ["為了應付政府檢查", "為了轉賣獲利", "因為錢沒地方花"] },
@@ -401,8 +361,9 @@
         { c: "基礎知識", q: "哪些政府單位共同參與此手冊內容編制？", a: "國防部、內政部、教育部等跨部會", w: ["只有國防部", "只有消防署", "民間企業"] },
         { c: "基礎知識", q: "什麼是「安全意志」？", a: "面對威脅仍願意防衛與保護家園的意志", w: ["購買高額保險", "立刻投降", "依賴外國救援"] },
         { c: "基礎知識", q: "為什麼災害時「互助」比「等待救援」重要？", a: "救援量能有限，民眾須先保護自己與周遭的人", w: ["因為救援要收費", "因為政府不會來", "因為互助比較好玩"] },
-        
-        // 2. 居家儲備
+        { c: "基礎知識", q: "民防系統的標誌通常是什麼形狀與顏色？", a: "橘色背景上的藍色三角形", w: ["紅色圓形", "黑色十字", "黃色星星"] },
+        { c: "基礎知識", q: "遭遇複合式災害（如地震引發火災）時，應變首要原則？", a: "先確保自身安全，再進行滅火或救人", w: ["先搶救財物", "先拍照打卡", "不顧一切衝進火場"] },
+        { c: "基礎知識", q: "什麼是T-CERT？", a: "台灣民間自主緊急應變隊", w: ["台灣電腦緊急應變小組", "台灣認證中心", "台灣觀光協會"] },
         { c: "居家儲備", q: "每人每日至少應準備多少飲用水？", a: "3公升", w: ["500cc", "10公升", "有喝飲料就好"] },
         { c: "居家儲備", q: "請列出基本食品儲備項目？", a: "飲用水、泡麵、罐頭、餅乾", w: ["生鮮牛排、生魚片", "大量冰淇淋", "只有白米"] },
         { c: "居家儲備", q: "關於「循環儲備」的概念，下列何者正確？", a: "日常多買一點，先買先用，隨時回補", w: ["買來鎖在倉庫直到過期", "只有颱風天去搶購", "只買罐頭"] },
@@ -413,8 +374,10 @@
         { c: "居家儲備", q: "疫情流行時，需要哪些衛生物品？", a: "口罩、酒精、消毒紙巾", w: ["香水", "面膜", "髮膠"] },
         { c: "居家儲備", q: "儲備生活用品的主要目的？", a: "確保生活基本需求、避免危機時冒險外出", w: ["為了囤積居奇", "為了炫耀", "為了好玩"] },
         { c: "居家儲備", q: "建議儲備物資的份量至少能維持多久？", a: "至少3天，建議1週以上", w: ["半天", "1個月", "半年"] },
-        
-        // 3. 緊急避難包
+        { c: "居家儲備", q: "蜂蜜在儲備物資中的優點？", a: "保存期限極長且提供高熱量", w: ["可以拿來敷臉", "比較便宜", "不會長螞蟻"] },
+        { c: "居家儲備", q: "為何要儲備鹽巴？", a: "補充身體電解質與保存食物", w: ["驅魔避邪", "洗澡用", "無聊時玩"] },
+        { c: "居家儲備", q: "緊急照明不建議使用蠟燭的原因？", a: "容易引發火災且消耗氧氣", w: ["亮度不夠", "比較貴", "會有鬼影"] },
+        { c: "居家儲備", q: "簡易廁所可以用什麼製作？", a: "水桶、塑膠袋與貓砂/凝固劑", w: ["紙箱", "寶特瓶", "直接在地上解決"] },
         { c: "避難包", q: "男性緊急避難包建議重量上限？", a: "15公斤", w: ["5公斤", "30公斤", "愈重愈好"] },
         { c: "避難包", q: "女性緊急避難包建議重量上限？", a: "10公斤", w: ["3公斤", "20公斤", "15公斤"] },
         { c: "避難包", q: "緊急避難包應放在哪裡？", a: "玄關或大門口等隨手可得處", w: ["臥室衣櫃最深處", "廚房冰箱裡", "陽台雜物堆"] },
@@ -425,8 +388,9 @@
         { c: "避難包", q: "避難包內準備「收音機」是為了？", a: "網路斷訊時接收政府資訊", w: ["無聊聽音樂", "發出求救訊號", "當作行動電源"] },
         { c: "避難包", q: "哪些證件建議準備影本放入包中？", a: "身分證、健保卡、存摺", w: ["集點卡", "會員卡", "名片"] },
         { c: "避難包", q: "避難包中的禦寒用品建議？", a: "鋁箔保暖毯、輕便雨衣", w: ["羽絨棉被", "電暖器", "厚重毛大衣"] },
-
-        // 4. 防空警報與海嘯
+        { c: "避難包", q: "為什麼要準備打火機或火柴？", a: "生火取暖或煮沸水源", w: ["抽菸用", "放煙火", "照明用"] },
+        { c: "避難包", q: "大力膠帶(Duct Tape)在避難時的用途？", a: "修補裝備、固定門窗、簡易包紮", w: ["貼在嘴巴上安靜", "當作裝飾", "除毛"] },
+        { c: "避難包", q: "螢光棒(Cyalume)相較於手電筒的優點？", a: "不需電池、防水且無火花(防氣爆)", w: ["比較亮", "可以重複使用", "可以吃"] },
         { c: "警報避難", q: "防空警報「解除」的聲音特徵？", a: "一長聲，持續90秒", w: ["一短聲", "急促短聲", "完全沒聲音"] },
         { c: "警報避難", q: "防空避難的三大原則？", a: "地下優於地上、室內優於室外、遠離門窗", w: ["地上優於地下", "室外優於室內", "靠近窗戶"] },
         { c: "警報避難", q: "若來不及去避難所，家中哪裡較安全？", a: "無窗戶、有承重牆的房間或浴室", w: ["陽台", "廚房", "客廳落地窗旁"] },
@@ -437,8 +401,9 @@
         { c: "警報避難", q: "防空警報響起，室內應避免在哪？", a: "窗戶旁、陽台", w: ["廁所", "走廊", "地下室"] },
         { c: "警報避難", q: "海嘯來臨時為何不建議開車？", a: "容易塞車受困且可能被水淹沒", w: ["車子會壞掉", "比較耗油", "違反交通規則"] },
         { c: "警報避難", q: "何處可查詢防空避難設施？", a: "警政服務App、防災e點通App", w: ["Google Play", "Youtube", "外送App"] },
-
-        // 5. 急救與互救
+        { c: "警報避難", q: "海嘯來臨前的常見徵兆？", a: "海水異常快速退去(退潮)", w: ["海水變熱", "海鷗聚集", "天空變綠"] },
+        { c: "警報避難", q: "手機接收到「國家級警報」時應？", a: "冷靜閱讀內容並採取對應行動", w: ["立刻關機", "截圖發IG", "大聲尖叫"] },
+        { c: "警報避難", q: "地震發生時在電梯內應？", a: "按下所有樓層按鈕，門開即出", w: ["向上跳", "趴在地上", "按求救鈴等待"] },
         { c: "急救互救", q: "CPR 的操作步驟？", a: "叫、叫、壓 (或叫、叫、壓+AED)", w: ["壓、壓、壓", "叫、跑、跳", "聽、看、停"] },
         { c: "急救互救", q: "CPR 胸部按壓的頻率？", a: "每分鐘100-120下", w: ["每分鐘60下", "每分鐘200下", "越慢越好"] },
         { c: "急救互救", q: "AED 使用的第一步？", a: "打開電源", w: ["貼上貼片", "按下電擊", "人工呼吸"] },
@@ -449,8 +414,11 @@
         { c: "急救互救", q: "毒氣(化學災害)外洩時，往哪避難？", a: "上風處", w: ["下風處", "低窪處", "地下室"] },
         { c: "急救互救", q: "核子事故「停、看、聽」的「停」是指？", a: "留在室內掩蔽，關閉門窗", w: ["停車熄火", "停止呼吸", "停止用電"] },
         { c: "急救互救", q: "為何要學習急救？", a: "醫療資源緊繃時，自救互救能提高生存率", w: ["為了考證照", "為了加薪", "因為好玩"] },
-
-        // 6. 軍事侵略
+        { c: "急救互救", q: "燒燙傷的第一步處理？", a: "沖冷水降溫", w: ["塗牙膏", "塗醬油", "冰敷(直接用冰塊)"] },
+        { c: "急救互救", q: "止血帶綁上後，需要在傷患身上註記什麼？", a: "止血帶綁上的時間", w: ["傷患的名字", "血型", "受傷原因"] },
+        { c: "急救互救", q: "服用「碘片」的主要功能？", a: "保護甲狀腺免受輻射傷害", w: ["治療輻射燒傷", "增加抵抗力", "淨化飲水"] },
+        { c: "急救互救", q: "懷疑中暑(熱衰竭)時應？", a: "移至陰涼處，鬆開衣物，補充水分", w: ["喝冰水", "立刻沖冷水澡", "吃退燒藥"] },
+        { c: "急救互救", q: "失溫(Hypothermia)的徵兆？", a: "顫抖停止、意識模糊、皮膚冰冷", w: ["大量流汗", "臉色潮紅", "呼吸急促"] },
         { c: "軍事應變", q: "看到不明武裝部隊時？", a: "保持冷靜、不挑釁、離開並通報", w: ["拍照上傳打卡", "上前詢問", "嘗試攻擊"] },
         { c: "軍事應變", q: "為何不能拍攝我軍動態上傳？", a: "會暴露位置，資敵且違法", w: ["因為阿兵哥害羞", "手機畫質太差", "流量不夠"] },
         { c: "軍事應變", q: "遭遇砲擊爆炸時應？", a: "背向爆炸點，迅速趴下掩蔽", w: ["站著看", "拿手機錄影", "大聲尖叫"] },
@@ -461,8 +429,9 @@
         { c: "軍事應變", q: "正確的戰時資訊來源？", a: "政府廣播、官方App", w: ["抖音", "小紅書", "路邊傳單"] },
         { c: "軍事應變", q: "為何「地下優於地上」？", a: "地下室有土層保護，較能擋衝擊波", w: ["地下室比較涼", "地下室有訊號", "地下室比較暗"] },
         { c: "軍事應變", q: "無地下室時，空襲躲哪？", a: "兩根柱子旁的牆角，避開玻璃", w: ["電梯裡", "頂樓", "陽台"] },
-
-        // 7. 假訊息與資安
+        { c: "軍事應變", q: "戰時實施「燈火管制」是為了？", a: "避免光線暴露目標位置", w: ["節省電力", "讓民眾早點睡", "增加恐怖氣氛"] },
+        { c: "軍事應變", q: "若必須在戰區移動，應選擇？", a: "貼近牆根、避開開闊地", w: ["走在大馬路中間", "穿著鮮豔衣服", "騎乘機車"] },
+        { c: "軍事應變", q: "什麼是「第五縱隊」？", a: "潛伏在內部的敵方破壞份子", w: ["五個人的隊伍", "負責後勤的部隊", "網路駭客"] },
         { c: "資訊安全", q: "辨識假訊息的「3不1要」？", a: "不製造、不輕信、不轉傳、要查證", w: ["不看、不聽、不說、要睡覺", "要轉傳、要按讚、要分享", "不查證、不思考、不懷疑"] },
         { c: "資訊安全", q: "戰時假訊息的主要危害？", a: "動搖民心士氣、製造恐慌", w: ["浪費網路流量", "讓手機沒電", "眼睛疲勞"] },
         { c: "資訊安全", q: "路邊不明 QR Code 可以掃嗎？", a: "不可，可能含惡意程式", w: ["可以，可能是優惠券", "看圖片漂亮就掃", "掃完關掉就好"] },
@@ -473,8 +442,8 @@
         { c: "資訊安全", q: "常見的戰時謠言？", a: "誇大我軍傷亡、散布投降論", w: ["明天會下雨", "超市打折", "明星八卦"] },
         { c: "資訊安全", q: "隨意轉傳謠言的後果？", a: "成為幫兇，可能觸法", w: ["手機會爆炸", "會被扣錢", "會變胖"] },
         { c: "資訊安全", q: "事實查核平台的功能？", a: "協助分辨真偽", w: ["提供遊戲攻略", "提供購物優惠", "聊天交友"] },
-
-        // 8. 民生與居住
+        { c: "資訊安全", q: "為何要開啟雙重認證(2FA)？", a: "增加帳號被盜用的難度", w: ["登入比較快", "可以領取獎勵", "防止手機過熱"] },
+        { c: "資訊安全", q: "釣魚簡訊(Phishing)的特徵？", a: "附帶不明連結，催促點擊", w: ["內容很長", "有很多表情符號", "沒有連結"] },
         { c: "民生居住", q: "住家全毀應前往？", a: "災民收容救濟站", w: ["便利商店", "公園", "警察局"] },
         { c: "民生居住", q: "救濟站提供哪些服務？", a: "食宿、醫療、通訊、心理輔導", w: ["電影欣賞", "按摩服務", "吃到飽自助餐"] },
         { c: "民生居住", q: "配售站的功能？", a: "依規定配給民生物資", w: ["販賣奢侈品", "發放現金", "舉辦抽獎"] },
@@ -485,8 +454,9 @@
         { c: "民生居住", q: "物資短缺時政府啟動？", a: "配售制度", w: ["拍賣會", "搶購大賽", "免費贈送"] },
         { c: "民生居住", q: "住大樓如何防停電受困？", a: "熟悉逃生梯、備妥鑰匙", w: ["準備降落傘", "住在電梯裡", "不回家"] },
         { c: "民生居住", q: "查詢配售站/救濟站？", a: "防災e點通App、區公所", w: ["Google Maps", "Uber", "臉書"] },
-
-        // 9. 心理調適
+        { c: "民生居住", q: "如何消毒飲用水(含氯漂白水比例)？", a: "1公升水加2滴(約0.1cc)漂白水", w: ["1:1比例", "整罐倒下去", "加沙拉脫"] },
+        { c: "民生居住", q: "使用滅火器的口訣？", a: "拉、瞄、壓、掃", w: ["沖、脫、泡、蓋、送", "停、看、聽", "壓、壓、壓"] },
+        { c: "民生居住", q: "火災時在濃煙中如何逃生？", a: "採低姿勢爬行，掩住口鼻", w: ["站立奔跑", "躲在廁所", "往頂樓跑"] },
         { c: "心理調適", q: "危機時常見負面情緒？", a: "焦慮、恐慌、無助", w: ["興奮、快樂、放鬆", "想睡覺", "肚子餓"] },
         { c: "心理調適", q: "降低焦慮的方法？", a: "深呼吸、專注當下、規律作息", w: ["大吃大喝", "熬夜", "狂刷手機"] },
         { c: "心理調適", q: "如何避免「替代性創傷」？", a: "減少觀看災難新聞", w: ["一直看新聞", "去災難現場", "想像災難畫面"] },
@@ -497,8 +467,7 @@
         { c: "心理調適", q: "心理支持系統包括？", a: "親友、鄰居、宗教、專業諮商", w: ["陌生人", "詐騙集團", "AI機器人"] },
         { c: "心理調適", q: "親友受驚嚇呆滯時？", a: "陪伴、給予溫水毛毯，不強迫說話", w: ["用力搖醒", "大聲喝斥", "潑冷水"] },
         { c: "心理調適", q: "何時尋求專業心理協助？", a: "嚴重失眠、絕望、無法生活時", w: ["心情好時", "肚子餓時", "無聊時"] },
-
-        // 10. 政府求助
+        { c: "心理調適", q: "「著地練習」(Grounding)是用來？", a: "緩解急性焦慮，回到當下", w: ["練習跳傘", "練習跌倒", "練習睡覺"] },
         { c: "政府求助", q: "緊急報案專線？", a: "110(警)、119(消/醫)、118(海)", w: ["111、222、333", "911 (美)", "007"] },
         { c: "政府求助", q: "「112」專線用途？", a: "訊號不良時跨網救難專線", w: ["查號台", "氣象台", "訂餐專線"] },
         { c: "政府求助", q: "電話網路癱瘓如何求助？", a: "前往派出所、消防隊", w: ["大聲尖叫", "在地上寫字", "放狼煙"] },
@@ -508,12 +477,16 @@
         { c: "政府求助", q: "1991平台功能？", a: "報平安留言", w: ["訂便當", "叫計程車", "聽音樂"] },
         { c: "政府求助", q: "為何約定「災後集合點」？", a: "通訊中斷時確保團聚", w: ["為了開派對", "為了拍照", "怕無聊"] },
         { c: "政府求助", q: "找不到資訊向誰求助？", a: "警消、民防人員、村里長", w: ["流浪漢", "便利商店店員", "網友"] },
-        { c: "政府求助", q: "家庭防災卡應包含？", a: "緊急聯絡人、集合點、避難所", w: ["Wifi密碼", "銀行密碼", "購物清單"] }
+        { c: "政府求助", q: "家庭防災卡應包含？", a: "緊急聯絡人、集合點、避難所", w: ["Wifi密碼", "銀行密碼", "購物清單"] },
+        { c: "政府求助", q: "衛星電話的主要優勢？", a: "不依賴地面基地台，災時仍可用", w: ["通話費便宜", "體積小", "可以玩遊戲"] },
+        { c: "政府求助", q: "建築物張貼「黃色危險標誌」代表？", a: "建築物需注意使用", w: ["建築物安全", "建築物需立刻拆除", "建築物出售中"] },
+        { c: "政府求助", q: "建築物張貼「紅色危險標誌」代表？", a: "建築物危險，應暫時停止使用", w: ["喜氣洋洋", "歡迎參觀", "政府機關"] }
     ];
 
     let playerName = "";
     let questionCount = 10;
     let currentQuestions = [];
+    let wrongAnswers = []; // 儲存錯題
     let currentIndex = 0;
     let score = 0;
     let startTime = 0;
@@ -542,11 +515,12 @@
         playerName = input.value.trim();
         document.getElementById('quiz-player-name').innerText = playerName;
 
+        // 初始化
         let pool = JSON.parse(JSON.stringify(fullDB));
         while(pool.length < questionCount) pool = pool.concat(fullDB);
         
         currentQuestions = pool.sort(() => Math.random() - 0.5).slice(0, questionCount);
-        
+        wrongAnswers = [];
         currentIndex = 0;
         score = 0;
         startTime = Date.now();
@@ -591,6 +565,8 @@
             score++;
         } else {
             btn.classList.add('wrong');
+            // 記錄錯題
+            wrongAnswers.push(currentQuestions[currentIndex]);
             all.forEach(b => {
                 if(b.innerText === correctTxt) b.classList.add('correct');
             });
@@ -608,24 +584,53 @@
         let timeUsed = Math.floor((Date.now() - startTime) / 1000);
 
         if (finalScore >= 60) {
-            // Good
             showScreen('screen-result-good');
             document.getElementById('score-good').innerText = finalScore;
             document.getElementById('correct-good').innerText = score;
             document.getElementById('time-good').innerText = timeUsed + "s";
             document.getElementById('name-good').innerText = playerName; 
-            
             let rank = "生存者";
             if(finalScore === 100) rank = "傳奇指揮官";
             else if(finalScore >= 80) rank = "生存專家";
             document.getElementById('rank-good').innerText = rank;
-
         } else {
-            // Bad (Satire)
             document.body.classList.add('bad-end'); 
             showScreen('screen-result-bad');
             document.getElementById('score-bad').innerText = finalScore;
             document.getElementById('name-bad').innerText = playerName;
+        }
+    }
+
+    // 顯示錯題解析
+    function showReview() {
+        if(wrongAnswers.length === 0) {
+            showToast("🎉 完美全對！無需複習！");
+            return;
+        }
+
+        const list = document.getElementById('review-list');
+        list.innerHTML = "";
+
+        wrongAnswers.forEach((item, index) => {
+            let html = `
+                <div class="review-item">
+                    <span class="review-label">${item.c}</span>
+                    <div class="review-q">${index + 1}. ${item.q}</div>
+                    <div class="review-ans">${item.a}</div>
+                </div>
+            `;
+            list.innerHTML += html;
+        });
+
+        showScreen('screen-review');
+    }
+
+    function backToResult() {
+        // 根據是否有 bad-end class 判斷回到哪個結果頁
+        if(document.body.classList.contains('bad-end')) {
+            showScreen('screen-result-bad');
+        } else {
+            showScreen('screen-result-good');
         }
     }
 
@@ -645,7 +650,7 @@
         btn.disabled = true;
 
         const originalWidth = element.style.width;
-        element.style.width = "600px"; // 強制鎖定寬度以獲得完美比例
+        element.style.width = "600px"; 
 
         html2canvas(element, {
             scale: 2,
@@ -654,12 +659,10 @@
             windowWidth: 1200
         }).then(canvas => {
             element.style.width = originalWidth;
-
             const link = document.createElement('a');
             link.download = `生存測驗戰報_${playerName}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
-            
             btn.innerText = originalText;
             btn.disabled = false;
             showToast("圖片已下載！");
