@@ -44,22 +44,22 @@
             background-color: #fff;
         }
 
-        /* --- 桌面圖示 (修改版) --- */
+        /* --- 桌面圖示 --- */
         .desktop-icon {
             width: 80px;
             text-align: center;
             color: white;
             cursor: pointer;
             margin-bottom: 20px;
-            /* 確保變成連結後樣式不跑掉 */
             display: block; 
             text-decoration: none; 
+            /* 讓長文字自動換行，避免太寬 */
+            word-wrap: break-word;
         }
         
-        /* 滑鼠移過去的效果 (選取狀態) */
         .desktop-icon:hover p {
             background-color: var(--win-dark-blue);
-            outline: 1px dotted #FFFF00; /* 經典的黃色虛線框 */
+            outline: 1px dotted #FFFF00;
         }
 
         .desktop-icon img {
@@ -67,15 +67,14 @@
             height: 48px;
             background-color: transparent; 
             image-rendering: pixelated;
-            border: none; /* 移除連結圖片可能的預設邊框 */
+            border: none;
         }
         .desktop-icon p {
             margin: 5px 0 0 0;
             font-size: 14px;
             text-shadow: 1px 1px #000;
-            /* 讓文字保持白色，不受連結預設藍色影響 */
             color: white; 
-            display: inline-block; /* 讓背景色只包住文字 */
+            display: inline-block;
             padding: 2px;
         }
 
@@ -172,28 +171,28 @@
             image-rendering: pixelated;
         }
 
-        /* 視窗內的文字連結 */
         .window-content a { color: blue; }
     </style>
 </head>
 <body>
 
     <div style="position: absolute; top: 20px; left: 20px;">
+        
         <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="desktop-icon">
             <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
             <p>My CV.txt</p>
         </a>
         
         <a href="https://github.com/yorkyau1993?tab=repositories" target="_blank" class="desktop-icon">
-             <img src="https://win98icons.alexmeub.com/icons/png/address_book_user.png" alt="Network">
+             <img src="https://win98icons.alexmeub.com/icons/png/address_book_user.png" alt="GitHub">
             <p>GitHub</p>
         </a>
-    </div>
 
-      <a href="https://yorkyau1993.github.io/mnd.html" target="_blank" class="desktop-icon">
-             <img src="https://win98icons.alexmeub.com/icons/png/address_book_pad.png" alt="Network">
+        <a href="https://yorkyau1993.github.io/mnd.html" target="_blank" class="desktop-icon">
+             <img src="https://win98icons.alexmeub.com/icons/png/address_book_pad-0.png" alt="MND">
             <p>全民防衛生存測驗</p>
         </a>
+
     </div>
 
     <div class="window" id="readmeWindow">
