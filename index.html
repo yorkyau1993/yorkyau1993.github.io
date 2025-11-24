@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to My Homepage - Windows 95</title>
+    <style>
+        /* --- 核心樣式設定 --- */
+        :root {
+            --win-teal: #008080;
+            --win-gray: #c0c0c0;
+            --win-dark-blue: #000080;
+            --win-border-light: #ffffff;
+            --win-border-dark: #808080;
+            --win-border-black: #000000;
+        }
+
+        body {
+            background-color: var(--win-teal);
+            font-family: "MS Sans Serif", Arial, sans-serif; /* 如果使用者電腦有裝就會用到 */
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden; /* 防止卷軸出現 */
+            image-rendering: pixelated; /* 讓圖片看起來有像素感 */
+        }
+
+        /* --- 通用 Win95 盒子樣式 (凸起效果) --- */
+        .win95-box {
+            background-color: var(--win-gray);
+            border-top: 2px solid var(--win-border-light);
+            border-left: 2px solid var(--win-border-light);
+            border-right: 2px solid var(--win-border-dark);
+            border-bottom: 2px solid var(--win-border-dark);
+            box-shadow: 1px 1px 0 0 var(--win-border-black);
+        }
+        
+        /* --- 凹陷效果 (用於輸入框或按鈕按下) --- */
+        .win95-inset {
+            border-top: 2px solid var(--win-border-dark);
+            border-left: 2px solid var(--win-border-dark);
+            border-right: 2px solid var(--win-border-light);
+            border-bottom: 2px solid var(--win-border-light);
+            background-color: #fff;
+        }
+
+        /* --- 桌面圖示 --- */
+        .desktop-icon {
+            width: 80px;
+            text-align: center;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .desktop-icon img {
+            width: 48px;
+            height: 48px;
+            /* 這裡用一個 placeholder 圖片，你可以換成自己的像素圖 */
+            background-color: transparent; 
+            image-rendering: pixelated;
+        }
+        .desktop-icon p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            text-shadow: 1px 1px #000;
+        }
+
+        /* --- 主視窗 --- */
+        .window {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            /* 這裡結合了 win95-box 的樣式 */
+            background-color: var(--win-gray);
+            border-top: 2px solid var(--win-border-light);
+            border-left: 2px solid var(--win-border-light);
+            border-right: 2px solid var(--win-border-dark);
+            border-bottom: 2px solid var(--win-border-dark);
+            box-shadow: 1px 1px 0 0 var(--win-border-black);
+        }
+
+        .title-bar {
+            background-color: var(--win-dark-blue);
+            color: white;
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            width: 16px;
+            height: 14px;
+            background-color: var(--win-gray);
+            border-top: 1px solid var(--win-border-light);
+            border-left: 1px solid var(--win-border-light);
+            border-right: 1px solid var(--win-border-black);
+            border-bottom: 1px solid var(--win-border-black);
+            font-size: 10px;
+            line-height: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: black;
+        }
+
+        .window-content {
+            padding: 20px;
+            color: black;
+        }
+
+        /* --- 底部工作列 --- */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35px;
+            background-color: var(--win-gray);
+            border-top: 2px solid var(--win-border-light);
+            display: flex;
+            align-items: center;
+            padding: 2px;
+        }
+
+        .start-btn {
+            display: flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-left: 2px;
+            cursor: pointer;
+             /* 繼承 win95-box 的樣式，但要能點擊 */
+            background-color: var(--win-gray);
+            border-top: 2px solid var(--win-border-light);
+            border-left: 2px solid var(--win-border-light);
+            border-right: 2px solid var(--win-border-dark);
+            border-bottom: 2px solid var(--win-border-dark);
+            box-shadow: 1px 1px 0 0 var(--win-border-black);
+        }
+        
+        .start-btn:active {
+             /* 按下去的效果 */
+            border-top: 2px solid var(--win-border-dark);
+            border-left: 2px solid var(--win-border-dark);
+            border-right: 2px solid var(--win-border-light);
+            border-bottom: 2px solid var(--win-border-light);
+            box-shadow: none;
+            padding: 5px 9px 3px 11px; /* 微調位置讓它看起來真的陷下去了 */
+        }
+        
+        .start-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            /* 使用一個 base64 的假微軟 logo，你可以換成圖片 */
+            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAE5JREFUOE9jZKAQcAEPxPT/T4Y5IM1IDb/+/8fIRJDm////45P9/x8jE0Ga3334iU/233984pQZ/e7DT3yy///jU0c2o2FwGARDCwAA4cpg4QW78XoAAAAASUVORK5CYII=");
+            background-size: cover;
+            image-rendering: pixelated;
+        }
+
+        /* 一些連結的樣式 */
+        a { color: blue; }
+    </style>
+</head>
+<body>
+
+    <div style="position: absolute; top: 20px; left: 20px;">
+        <div class="desktop-icon" onclick="alert('https://www.threads.com/@yorkwwwwong')">
+            <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
+            <p>My CV.txt</p>
+        </div>
+        <div class="desktop-icon" onclick="alert('https://github.com/yorkyau1993?tab=repositories')">
+             <img src="https://win98icons.alexmeub.com/icons/png/network_internet_pcs_sn-0.png" alt="Network">
+            <p>GitHub</p>
+        </div>
+    </div>
+
+    <div class="window" id="readmeWindow">
+        <div class="title-bar">
+            <div style="display: flex; align-items: center;">
+                 <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" width="16" height="16" style="margin-right: 5px;">
+                <span>Readme.txt - Notepad</span>
+            </div>
+            <div class="close-btn" onclick="document.getElementById('readmeWindow').style.display='none'">X</div>
+        </div>
+        <div class="window-content">
+            <p>Hello World!</p>
+            <p>歡迎來到我的個人首頁。</p>
+            
+            <div class="win95-inset" style="padding: 10px; margin-top: 20px; height: 100px; overflow-y: auto;">
+                A:\> 關於我 <br>
+                ----------------<br>
+                - (自稱)網站工程師<br>
+                - 電視台攝影記者<br>
+                - 喜歡像素藝術
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="win95-box" style="padding: 5px 20px; cursor:pointer;" onclick="alert('OK!')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="taskbar">
+        <div class="start-btn">
+            <div class="start-icon"></div>
+            Start
+        </div>
+    </div>
+
+</body>
+</html>
