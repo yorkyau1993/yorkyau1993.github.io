@@ -276,9 +276,11 @@
 
         .school-input-group { display: none; }
         
-        /* 截圖區域設定 - 增加 Padding 讓白色卡片變小 */###
+/* 截圖區域設定 */
         .export-wrapper { 
-            padding: 20px 20px;
+            /* 手機版維持較小的間距，才不會變太窄 */
+            padding: 20px 20px;  
+            
             border-radius: 20px; 
             background: inherit; 
             width: 100%; 
@@ -1970,27 +1972,46 @@
         }
     }
 
-    function downloadImage(elementId, bgColor) {
+function downloadImage(elementId, bgColor) {
         const element = document.getElementById(elementId);
         const btn = event.target;
         const originalText = btn.innerText;
+        
+        // 鎖定按鈕
         btn.innerText = "🔄 處理中...";
         btn.disabled = true;
 
+        // 1. 記錄原本的樣式 (以免跑版回不去)
         const originalWidth = element.style.width;
+        const originalPadding = element.style.padding;
+        const originalBoxSizing = element.style.boxSizing;
+
+        // 2. 設定「截圖專用」的樣式 (讓白框變小，留白變多)
+        // 設定總寬度為 800px
         element.style.width = "800px"; 
+        element.style.boxSizing = "border-box";
+        // ★ 重點在這裡：截圖時給它超大的內距 (上下60px, 左右120px)
+        // 這樣 800px 寬度扣掉左右 120px，中間白框只剩 560px，看起來就會很精緻
+        element.style.padding = "60px 120px"; 
 
         html2canvas(element, {
             scale: 2,
             useCORS: true,
             backgroundColor: bgColor,
-            windowWidth: 1600
+            windowWidth: 1600 // 模擬大螢幕渲染
         }).then(canvas => {
-            element.style.width = originalWidth; 
+            // 3. 截圖完成，立刻還原樣式 (讓螢幕畫面恢復正常)
+            element.style.width = originalWidth;
+            element.style.padding = originalPadding;
+            element.style.boxSizing = originalBoxSizing;
+
+            // 4. 下載圖片
             const link = document.createElement('a');
             link.download = `生存測驗戰報_${playerName}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
+            
+            // 復原按鈕
             btn.innerText = originalText;
             btn.disabled = false;
             
@@ -1999,12 +2020,15 @@
             setTimeout(() => toast.style.display = 'none', 3000);
         }).catch(err => {
             console.error("生成失敗:", err);
+            // 發生錯誤也要還原樣式
             element.style.width = originalWidth;
+            element.style.padding = originalPadding;
+            element.style.boxSizing = originalBoxSizing;
+            
             btn.innerText = "❌ 失敗";
             setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
         });
     }
-
     // --- 特效功能 ---
     function fireworksEffect() {
         var duration = 3000;
