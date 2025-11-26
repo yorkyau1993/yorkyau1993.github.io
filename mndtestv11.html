@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>全民防衛生存測驗 V13</title>
+    <title>全民防衛生存測驗 V26 緊湊版</title>
     
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -28,11 +28,7 @@
         }
 
         html, body { margin: 0; padding: 0; overflow-x: hidden; min-height: 100%; }
-        
-        /* 全局 Box-sizing 修正 */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { box-sizing: border-box; }
 
         body {
             background-color: var(--theme-bg);
@@ -73,14 +69,8 @@
         .input-group label { display: block; margin-bottom: 8px; font-size: 1.1rem; font-weight: 900; }
         
         .input-name {
-            width: 100%; 
-            padding: 15px; 
-            border: 2px solid var(--card-border); 
-            border-radius: 10px;
-            background: #f9f9f9; color: var(--card-text); 
-            font-size: 1.2rem; font-weight: bold; 
-            outline: none; font-family: inherit;
-            max-width: 100%; 
+            width: 100%; padding: 15px; border: 2px solid var(--card-border); border-radius: 10px;
+            background: #f9f9f9; color: var(--card-text); font-size: 1.2rem; font-weight: bold; outline: none; font-family: inherit; max-width: 100%; 
         }
         .input-name:focus { box-shadow: 3px 3px 0px rgba(0,0,0,1); background: #fff; }
 
@@ -129,23 +119,6 @@
         .rank-badge { background: #000; color: #fff; padding: 5px 20px; border-radius: 30px; font-size: 1.1rem; margin-bottom: 10px; display: inline-block;}
         .score-display { font-size: 5rem; font-weight: 900; margin: 5px 0; line-height: 1; }
         
-        /* QR Code 區域樣式 */
-        .code-container {
-            border: 2px dashed #000;
-            background: #f0f0f0;
-            padding: 10px;
-            margin-top: 15px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-        }
-        .code-text-area { text-align: left; }
-        .code-label { font-size: 0.8rem; font-weight: bold; color: #666; display: block; }
-        .code-value { font-size: 1.4rem; font-weight: 900; font-family: monospace; letter-spacing: 2px; color: #006400; }
-        #qrcode { padding: 5px; background: #fff; border: 1px solid #ddd; }
-        #qrcode img { display: block; }
-
         .stamp-seal { position: absolute; top: 20px; right: 20px; border: 5px double; font-size: 1.8rem; font-weight: 900; padding: 8px 20px; transform: rotate(-15deg); border-radius: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; mix-blend-mode: multiply; pointer-events: none; z-index: 10; }
         .stamp-pass { color: #006400; border-color: #006400; } 
         .stamp-fail { color: #d00; border-color: #d00; }        
@@ -154,18 +127,9 @@
         .btn-action:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
         .btn-secondary { background: #fff; color: #000; border: 2px solid #000; }
         
-        /* 修正連結按鈕樣式 */
-        .btn-link { 
-            background: #0056b3; color: #fff; border: 2px solid #fff; margin: 0 auto 10px auto; 
-            white-space: normal;
-            line-height: 1.2;
-            height: auto; 
-            min-height: 54px; 
-            padding: 10px 20px;
-            font-size: clamp(0.9rem, 4vw, 1.1rem);
-        }
+        .btn-link { background: #0056b3; color: #fff; border: 2px solid #fff; margin: 0 auto 10px auto; white-space: normal; line-height: 1.2; height: auto; min-height: 54px; padding: 10px 20px; font-size: clamp(0.9rem, 4vw, 1.1rem); }
         
-        .btn-audio { background: #f0f0f0; color: #333; border: 1px solid #999; font-size: 1rem; padding: 10px 20px; width: auto; display: inline-block; margin-top: 10px; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 2px 2px 0 rgba(0,0,0,0.2); transition: 0.1s; }
+        .btn-audio { background: #f0f0f0; color: #333; border: 1px solid #999; font-size: 1rem; padding: 10px 20px; width: auto; display: inline-block; margin-top: 5px; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 2px 2px 0 rgba(0,0,0,0.2); transition: 0.1s; }
         .btn-audio:hover { background: #fff; transform: translateY(-2px); }
         .btn-audio:active { transform: translateY(1px); box-shadow: 0 0 0; }
 
@@ -182,8 +146,96 @@
         .export-wrapper { padding: 20px 20px; border-radius: 20px; background: inherit; width: 100%; box-sizing: border-box; position: relative; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 15px 30px; display: none; border-radius: 30px; font-size: 1.2rem; border: 2px solid #fff; z-index: 9999; }
         
-        /* Loading Overlay */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
+
+        /* 數位憑證樣式 */
+        #cert-lock-section { display: none; } 
+        .cert-lock-ui {
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+        }
+        .cert-lock-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+        .cert-lock-text { font-size: 1.1rem; font-weight: 900; color: #333; margin-bottom: 15px; }
+
+        /* 彈出視窗樣式 */
+        #preview-modal {
+            display: none;
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); 
+            z-index: 10001;
+            overflow-y: auto; 
+            padding: 20px 0; 
+            box-sizing: border-box;
+            align-items: center;
+            justify-content: flex-start; 
+            flex-direction: column;
+        }
+        
+        /* 憑證卡片本體 */
+        #certificate-card {
+            background: #f8f9fa;
+            border: 8px solid #000;
+            border-radius: 30px;
+            padding: 30px; 
+            text-align: center;
+            width: 90%; 
+            max-width: 500px; 
+            box-sizing: border-box;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            color: #000;
+            margin: 20px 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0; 
+        }
+
+        .cert-header { font-size: 1.8rem; font-weight: 900; margin-bottom: 20px; border-bottom: 4px solid #000; padding-bottom: 15px; width: 100%;}
+        .cert-name { font-size: 1.4rem; margin-bottom: 20px; font-weight: bold; }
+        
+        #cert-real-qr { 
+            background: #fff; 
+            border: 3px solid #000; 
+            padding: 10px; 
+            display: inline-block; 
+            border-radius: 10px; 
+            margin-bottom: 15px; 
+        }
+        #cert-real-qr img { display: block; }
+
+        .cert-code-val { font-family: monospace; font-size: 1.5rem; letter-spacing: 2px; font-weight: 900; margin-bottom: 20px; color: #006400; }
+        
+        .cert-reward-box { 
+            background: #fff8e1; 
+            border: 3px dashed #ff8f00; 
+            padding: 15px; 
+            border-radius: 15px; 
+            margin-top: 10px;
+            width: 100%;
+        }
+        .cert-reward-title { color: #ff8f00; font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
+        .cert-reward-content { color: #d35400; font-size: 1.8rem; font-weight: 900; word-break: break-all;}
+
+        .preview-btns { 
+            display: flex; 
+            gap: 15px; 
+            width: 90%; 
+            max-width: 500px; 
+            justify-content: center;
+            margin-bottom: 40px; 
+            flex-shrink: 0;
+        }
+        .btn-preview { padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; border: none; flex: 1; max-width: 200px;}
+        .btn-save { background: #006400; color: #fff; box-shadow: 0 0 10px rgba(0,255,0,0.5); border: 2px solid #fff; }
+        .btn-close { background: #fff; color: #000; border: 2px solid #000;}
+
     </style>
 </head>
 <body>
@@ -194,11 +246,37 @@
     <p>Loading Question Bank...</p>
 </div>
 
+<div id="preview-modal">
+    <h3 style="color:#fff; margin-top:20px; margin-bottom:15px; text-shadow:0 2px 2px #000; text-align:center; flex-shrink:0;">🎉 憑證已解鎖！<br><span style="font-size:0.9rem; font-weight:normal;">(這是真實預覽，請點擊儲存)</span></h3>
+    
+    <div id="certificate-card">
+        <div class="cert-header">🛡️ 數位生存憑證</div>
+        <div class="cert-name">合格生存者：<span id="cert-render-name">XXX</span></div>
+        
+        <div id="cert-real-qr"></div>
+        
+        <div style="font-weight:bold; color:#666;">認證代碼 (Survivor Code)</div>
+        <div class="cert-code-val" id="cert-render-code">-----</div>
+
+        <div class="cert-reward-box" id="cert-render-reward-box" style="display:none;">
+            <div class="cert-reward-title">🎁 解鎖神秘獎勵</div>
+            <div class="cert-reward-content" id="cert-render-reward-text"></div>
+        </div>
+        
+        <div style="margin-top:20px; font-size:0.9rem; opacity:0.6;">全民防衛生存測驗 • 認證通過</div>
+    </div>
+
+    <div class="preview-btns">
+        <button id="btn-save-cert" class="btn-preview btn-save" onclick="saveCertificateFile()">⬇️ 儲存圖片</button>
+        <button class="btn-preview btn-close" onclick="closePreviewModal()">❌ 關閉</button>
+    </div>
+</div>
+
 <div class="container">
     
     <div id="screen-start" class="screen active">
         <div class="start-content" style="width:100%; max-width:500px;">
-            <h1>🛡️ 全民防衛生存測驗<br><span style="font-size:1.2rem; display:block; margin-top:5px;">V13 穩定版</span></h1>
+            <h1>🛡️ 全民防衛生存測驗<br><span style="font-size:1.2rem; display:block; margin-top:5px;">V26 緊湊版</span></h1>
             <p class="subtitle">做好準備，保護自己！</p>
 
             <div class="card-box login-box">
@@ -315,35 +393,39 @@
                             你的防災意識極佳<br>是國家安全的基石！
                         </p>
 
-                        <div class="code-container">
-                            <div class="code-text-area">
-                                <span class="code-label">認證代碼</span>
-                                <div id="survivor-code" class="code-value">-----</div>
-                            </div>
-                            <div id="qrcode"></div>
-                        </div>
-
                         <div style="border-top:2px solid #000; padding-top:10px; margin-top:15px; font-size:1rem; display:flex; justify-content:space-between; font-weight: bold;">
                             <span>答對: <b id="correct-good">0</b></span>
                             <span>耗時: <b id="time-good">0s</b></span>
                         </div>
                     </div>
-                    <div style="text-align: center; color: #fff; font-weight: bold; margin-top:10px; font-size:0.8rem;">遊戲製作: 阿吉 YORK</div>
+                    <div style="text-align: center; color: #fff; font-weight: bold; margin-top:5px; font-size:0.8rem;">遊戲製作: 阿吉 YORK</div>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
+                <div style="text-align: center;">
                     <button class="btn-audio" style="background:#e6fffa; color:#006400; border-color:#006400;" onclick="fireworksEffect()">👏 給自己掌聲</button>
-                    <br>
-                    <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="btn-mini">👉 追蹤 YORK (Threads)</a>
                 </div>
             </div>
             
             <div class="result-right">
+                
+                <button class="btn-action" onclick="downloadIGReport('export-good', '#C04000')">📸 下載 IG 戰報 (分享用)</button>
+                
+                <div id="cert-lock-section" class="cert-lock-ui">
+                    <div class="cert-lock-icon">🔒</div>
+                    <div class="cert-lock-text">
+                        認證代碼與神秘獎勵<br>已加密封存於數位憑證中
+                    </div>
+                    <button class="btn-action btn-secondary" style="font-size:1rem; margin-bottom:0;" onclick="showCertificatePreview()">📥 下載認證憑證 (解鎖獎勵)</button>
+                </div>
+
                 <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時:臺灣全民安全指引</a>
-                <button class="btn-action" onclick="downloadImage('export-good', '#C04000')">📸 下載 IG 戰報</button>
                 <button id="btn-csv-good" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下載答題明細 (.csv)</button>
                 <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
                 <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新測驗</button>
             </div>
+        </div>
+        
+        <div style="margin-top:30px; text-align:center;">
+            <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="btn-mini">👉 追蹤 YORK (Threads)</a>
         </div>
     </div>
 
@@ -351,7 +433,7 @@
         <div class="result-layout">
             <div class="result-left">
                 <div id="export-bad" class="export-wrapper">
-                    <h1 class="bad-font-style">🛡️ 全民防卫生存测验</h1>
+                    <h1 class="bad-font-style">🛡️ 全民防衛生存測驗</h1>
                     <div class="card-box result-bad" id="card-bad" style="border-color:#000;">
                         <div class="stamp-seal stamp-fail">統一功臣</div>
                         <div style="font-size:1.1rem; letter-spacing:1px; margin-bottom:5px; font-weight: 900; color:#000;">生存智商指数</div>
@@ -366,22 +448,24 @@
                         </div>
                         <div style="font-size:0.9rem; margin-top:10px; font-weight: bold; color:#000;">战区接收工作委员会 致赠</div>
                     </div>
-                    <div style="text-align: center; color: #fff; font-weight: bold; margin-top:10px; font-size:0.8rem;">遊戲製作: 阿吉 YORK</div>
+                    <div style="text-align: center; color: #fff; font-weight: bold; margin-top:5px; font-size:0.8rem;">遊戲製作: 阿吉 YORK</div>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
+                <div style="text-align: center;">
                     <button class="btn-audio" style="background:#fee; color:#d00; border-color:#d00;" onclick="starsEffect()">🇨🇳 党的回馈</button>
-                    <br>
-                    <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="btn-mini">👉 追蹤 YORK (Threads)</a>
                 </div>
             </div>
 
             <div class="result-right">
                 <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時：臺灣全民安全指引</a>
-                <button class="btn-action" onclick="downloadImage('export-bad', '#EE1C25')">📸 下载感谢状</button>
+                <button class="btn-action" onclick="downloadIGReport('export-bad', '#EE1C25')">📸 下载感谢状</button>
                 <button id="btn-csv-bad" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下载详细报表 (.csv)</button>
                 <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
                 <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新学习</button>
             </div>
+        </div>
+        
+        <div style="margin-top:30px; text-align:center;">
+            <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="btn-mini">👉 追蹤 YORK (Threads)</a>
         </div>
     </div>
 
@@ -396,10 +480,13 @@
 <div id="toast" class="toast">圖片已下載！</div>
 
 <script>
-    // ★ 設定區域：請將您的問題庫 Google Sheet CSV 連結貼在這裡
+    // ★ 設定 1：題庫 CSV 連結
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0Wkcims9kNqO1lPiyC-JJbDVMv1WkLoO7ch1_l1OfiW1QmEJiqvKSlcjmSfD9V5DCT76NrF4TdwGR/pub?output=csv"; 
+    
+    // ★ 設定 2：獎品庫 CSV 連結 (格式: 獎品名稱, 權重)
+    const PRIZE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQG3B8wjswk3n5kDc6gcEIu1qebopvde5vPnw2AntvgrVIqE2mDclyrUgs6vHziTXavx9jTX0fUQq0R/pub?output=csv"; 
 
-    // Google Sheet資料庫 連結
+    // ★ 設定 3：Google 表單回傳 ID
     const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdW4Pn6_2RY0Fjdm4VjtnRBLsyBOwCHXxN6Ydt8uCb9Htb-CQ/formResponse";
     const ENTRY_ID_NAME = "entry.2026948411";
     const ENTRY_ID_SCORE = "entry.613612201";
@@ -407,10 +494,14 @@
     const ENTRY_ID_WRONG = "entry.2029704736";
     const ENTRY_ID_TIME = "entry.603554255";
     const ENTRY_ID_SCHOOL = "entry.1859416093"; 
-    // ★★★ 請在此填入 Google 表單「認證代碼」欄位的 entry ID ★★★
     const ENTRY_ID_CODE = "entry.1435004792"; 
+    const ENTRY_ID_PRIZE = "entry.242697873"; 
+
+    // ★ 設定 3：功能開關 true/false (是否啟用憑證與獎勵系統)
+    const ENABLE_CERTIFICATE = false; 
 
     let fullDB = []; 
+    let prizePool = []; 
 
     let playerName = "";
     let playerSchool = "";
@@ -422,30 +513,26 @@
     let score = 0;
     let startTime = 0;
     let gameMode = 'personal';
+    
+    // 暫存獲獎資訊
+    let currentSurvivorCode = "";
+    let currentWonPrize = "";
 
-    // --- CSV 解析與載入 ---
     window.onload = function() {
-        if (!GOOGLE_SHEET_CSV_URL || GOOGLE_SHEET_CSV_URL === "YOUR_GOOGLE_SHEET_CSV_URL") {
-            alert("請先設定 Google Sheet CSV 連結！");
-            document.getElementById('loading-overlay').innerHTML = "<h2>⚠️ 未設定資料庫連結</h2>";
-            return;
-        }
-        fetchQuestions();
+        Promise.all([
+            fetch(GOOGLE_SHEET_CSV_URL).then(r => r.text()),
+            fetch(PRIZE_CSV_URL).then(r => r.text()).catch(e => null) 
+        ]).then(([questionsText, prizesText]) => {
+            fullDB = csvToJSON(questionsText);
+            if(prizesText) parsePrizes(prizesText);
+            
+            document.getElementById('loading-overlay').style.display = 'none';
+            console.log("題庫載入:", fullDB.length, "獎品數:", prizePool.length);
+        }).catch(err => {
+            console.error("載入失敗:", err);
+            document.getElementById('loading-overlay').innerHTML = "<h2>⚠️ 連線失敗</h2><p>請檢查網路設定</p>";
+        });
     };
-
-    function fetchQuestions() {
-        fetch(GOOGLE_SHEET_CSV_URL)
-            .then(response => response.text())
-            .then(csvText => {
-                fullDB = csvToJSON(csvText);
-                document.getElementById('loading-overlay').style.display = 'none';
-                console.log("題目載入完成:", fullDB.length, "題");
-            })
-            .catch(error => {
-                console.error("載入失敗:", error);
-                document.getElementById('loading-overlay').innerHTML = "<h2>⚠️ 資料庫連線失敗</h2><p>請檢查網路或連結設定</p>";
-            });
-    }
 
     function csvToJSON(csv) {
         const lines = csv.split(/\r\n|\n/);
@@ -461,19 +548,44 @@
             if(currentline[6]) wrongs.push({ t: currentline[6], bad: currentline[7] || "" });
             if(currentline[8]) wrongs.push({ t: currentline[8], bad: currentline[9] || "" });
 
-            let obj = {
+            result.push({
                 c: currentline[0] || "通用",
                 q: currentline[1],
                 a: currentline[2],
                 desc: currentline[3] || "",
                 w: wrongs
-            };
-            result.push(obj);
+            });
         }
         return result;
     }
 
-    // --- Init ---
+    function parsePrizes(csv) {
+        const lines = csv.split(/\r\n|\n/);
+        prizePool = [];
+        for(let i=1; i<lines.length; i++) {
+            const row = lines[i].split(",");
+            if(row.length >= 2) {
+                let name = row[0].trim();
+                let weight = parseInt(row[1].trim()) || 0;
+                if(name && weight > 0) {
+                    prizePool.push({ name: name, weight: weight });
+                }
+            }
+        }
+    }
+
+    function drawPrize() {
+        if(!prizePool || prizePool.length === 0) return null;
+        let totalWeight = prizePool.reduce((sum, p) => sum + p.weight, 0);
+        let randomNum = Math.random() * totalWeight;
+        let weightSum = 0;
+        for (let p of prizePool) {
+            weightSum += p.weight;
+            if (randomNum <= weightSum) { return p.name; }
+        }
+        return prizePool[prizePool.length - 1].name;
+    }
+
     function selectCount(n) {
         questionCount = n;
         document.querySelectorAll('.mode-select-btn').forEach(b => b.classList.remove('selected'));
@@ -485,7 +597,7 @@
     function backToStart() { showScreen('screen-start'); }
 
     function startGame(mode) {
-        if(fullDB.length === 0) { alert("題目載入中，請稍後..."); return; }
+        if(fullDB.length === 0) { alert("資料載入中，請稍後..."); return; }
 
         let inputName, inputSchool, errorMsg;
         gameMode = mode;
@@ -494,24 +606,21 @@
             inputName = document.getElementById('player-team');
             inputSchool = document.getElementById('player-school');
             errorMsg = document.getElementById('school-error');
-            
-            if (!inputSchool.value.trim()) { showError(errorMsg, "請輸入學校名稱！"); return; }
-            if (!inputName.value.trim()) { showError(errorMsg, "請輸入隊名或代表人！"); return; }
-            
+            if (!inputSchool.value.trim() || !inputName.value.trim()) { 
+                showError(errorMsg, "請填寫所有欄位！"); return; 
+            }
             playerSchool = inputSchool.value.trim();
             document.body.classList.add('mode-school');
         } else {
             inputName = document.getElementById('player-name');
             errorMsg = document.getElementById('start-error');
             if (!inputName.value.trim()) { showError(errorMsg, "請輸入您的名字！"); return; }
-            
             playerSchool = ""; 
             document.body.classList.remove('mode-school');
         }
         
         playerName = inputName.value.trim();
         document.getElementById('quiz-player-name').innerText = playerName;
-
         if(errorMsg) errorMsg.style.display = 'none';
 
         let pool = JSON.parse(JSON.stringify(fullDB));
@@ -541,7 +650,6 @@
 
     function loadQuestion() {
         document.getElementById('feedback-modal').style.display = 'none';
-
         const qData = currentQuestions[currentIndex];
         document.getElementById('quiz-progress').innerText = `${currentIndex + 1} / ${questionCount}`;
         document.getElementById('q-cat').innerText = qData.c;
@@ -570,10 +678,7 @@
     function checkAnswer(btn, isCorrect, qData, specificBad) {
         const all = document.querySelectorAll('.option-btn');
         all.forEach(b => b.style.pointerEvents = 'none');
-
-        allAnswers.push({ 
-            q: qData.q, u: btn.innerText, a: qData.a, c: isCorrect ? 'O' : 'X', bad: specificBad 
-        });
+        allAnswers.push({ q: qData.q, u: btn.innerText, a: qData.a, c: isCorrect ? 'O' : 'X', bad: specificBad });
 
         if(isCorrect) {
             btn.classList.add('correct');
@@ -584,7 +689,6 @@
             btn.classList.add('wrong');
             wrongAnswers.push({ ...qData, specificBad: specificBad }); 
             all.forEach(b => { if(b.innerText === qData.a) b.classList.add('correct'); });
-
             if(gameMode === 'challenge') { setTimeout(nextQuestion, 1000); } 
             else { setTimeout(() => showFeedback(false, qData, specificBad), 800); }
         }
@@ -595,7 +699,6 @@
         const title = document.getElementById('feedback-title');
         const content = document.getElementById('feedback-content');
         const consequenceArea = document.getElementById('consequence-area');
-
         consequenceArea.innerHTML = "";
         consequenceArea.style.display = 'none';
 
@@ -637,7 +740,10 @@
         document.getElementById('feedback-modal').style.display = 'none';
         let finalScore = Math.round((score / questionCount) * 100);
         let timeUsed = Math.floor((Date.now() - startTime) / 1000);
-        let survivorCode = "";
+        
+        // 產生全域變數，供憑證使用
+        currentSurvivorCode = generateSurvivorCode();
+        currentWonPrize = drawPrize(); 
 
         if(gameMode === 'school') {
             document.getElementById('btn-csv-good').style.display = 'block';
@@ -648,26 +754,32 @@
         }
 
         if (finalScore >= 60) {
-            survivorCode = generateSurvivorCode();
             showScreen('screen-result-good');
             document.getElementById('score-good').innerText = finalScore;
             document.getElementById('correct-good').innerText = score;
             document.getElementById('time-good').innerText = timeUsed + "s";
             document.getElementById('name-good').innerText = playerName;
-            document.getElementById('survivor-code').innerText = survivorCode;
             
             if(gameMode === 'school') { 
                 document.getElementById('school-good').style.display = 'block'; 
                 document.getElementById('school-good').innerText = playerSchool; 
             }
 
-            document.getElementById("qrcode").innerHTML = ""; 
-            new QRCode(document.getElementById("qrcode"), {
-                text: survivorCode, 
-                width: 100, height: 100,
-                colorDark : "#000000", colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
+            // 控制憑證開關
+            if(ENABLE_CERTIFICATE) {
+                document.getElementById('cert-lock-section').style.display = 'block';
+                document.getElementById('cert-render-name').innerText = playerName;
+                document.getElementById('cert-render-code').innerText = currentSurvivorCode;
+                
+                if (wonPrize) {
+                    document.getElementById('cert-render-reward-text').innerText = wonPrize;
+                    document.getElementById('cert-render-reward-box').style.display = 'block';
+                } else {
+                    document.getElementById('cert-render-reward-box').style.display = 'none';
+                }
+            } else {
+                document.getElementById('cert-lock-section').style.display = 'none';
+            }
 
         } else {
             document.body.classList.add('bad-end'); 
@@ -680,26 +792,23 @@
             }
         }
 
-        sendData(playerName, finalScore, timeUsed, survivorCode, wrongAnswers);
+        sendData(playerName, finalScore, timeUsed, currentSurvivorCode, currentWonPrize, wrongAnswers);
     }
 
-    // ★ 資料傳送修正：確保代碼回傳
-    function sendData(name, score, time, code, wrongList) {
+    function sendData(name, score, time, code, prize, wrongList) {
         const formData = new FormData();
         formData.append(ENTRY_ID_SCHOOL, playerSchool);
         formData.append(ENTRY_ID_NAME, name);
         formData.append(ENTRY_ID_SCORE, score);
         formData.append(ENTRY_ID_TIME, time);
         
-        if(code && ENTRY_ID_CODE && ENTRY_ID_CODE.length > 5) {
-            formData.append(ENTRY_ID_CODE, code);
-        } else {
-            console.warn("⚠️ 警告：未設定 ENTRY_ID_CODE，無法傳送認證代碼至 Google Sheet！");
+        if(ENABLE_CERTIFICATE) {
+            if(code) formData.append(ENTRY_ID_CODE, code);
+            if(prize) formData.append(ENTRY_ID_PRIZE, prize);
         }
         
         let wrongText = wrongList.length > 0 ? wrongList.map(w => w.q).join(" | ") : "無 (全對)";
         formData.append(ENTRY_ID_WRONG, wrongText);
-
         fetch(GOOGLE_FORM_URL, { method: "POST", body: formData, mode: "no-cors" }).catch(err => { console.error("Data Error", err); });
     }
 
@@ -735,50 +844,93 @@
         else { showScreen('screen-result-good'); }
     }
 
-    // ★ 還原為簡單的第一代截圖代碼 (鎖定 600px 寬度)
-    function downloadImage(elementId, bgColor) {
+    function downloadIGReport(elementId, bgColor) {
         const element = document.getElementById(elementId);
         const btn = event.target;
         const originalText = btn.innerText;
-        
-        btn.innerText = "🔄 圖片生成中...";
-        btn.disabled = true;
+        btn.innerText = "🔄 圖片生成中..."; btn.disabled = true;
 
-        // 手機版截圖時，暫時將寬度鎖定為 600px 以獲得清晰的海報比例
         const originalWidth = element.style.width;
         element.style.width = "600px"; 
 
         html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: bgColor,
-            windowWidth: 850 // 虛擬視窗寬度，確保截圖不跑版
+            scale: 2, useCORS: true, backgroundColor: bgColor, windowWidth: 1200 
         }).then(canvas => {
-            element.style.width = originalWidth; // 恢復原狀
-
+            element.style.width = originalWidth;
             const link = document.createElement('a');
-            link.download = `生存測驗戰報_${playerName}.png`;
+            link.download = `生存戰報_${playerName}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
-            
-            btn.innerText = originalText;
-            btn.disabled = false;
-            
+            btn.innerText = originalText; btn.disabled = false;
             const toast = document.getElementById('toast');
-            if(toast) {
-                toast.innerText = "圖片已下載！";
-                toast.style.display = 'block';
-                setTimeout(() => toast.style.display = 'none', 3000);
-            }
+            if(toast) { toast.style.display = 'block'; setTimeout(() => toast.style.display = 'none', 3000); }
         }).catch(err => {
             console.error("生成失敗:", err);
             element.style.width = originalWidth;
-            btn.innerText = "❌ 失敗";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }, 2000);
+            btn.innerText = "❌ 失敗"; setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
         });
+    }
+
+    // ★ 彈出憑證預覽視窗 (V24 真實渲染)
+    function showCertificatePreview() {
+        // 1. 填入資料
+        document.getElementById('cert-render-name').innerText = playerName;
+        document.getElementById('cert-render-code').innerText = currentSurvivorCode;
+        
+        // 2. 生成 QR Code (直接畫在 DOM 上，瀏覽器一定會渲染)
+        const qrContainer = document.getElementById("cert-real-qr");
+        qrContainer.innerHTML = ""; 
+        new QRCode(qrContainer, {
+            text: currentSurvivorCode, 
+            width: 150, height: 150,
+            colorDark : "#000000", colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        // 3. 處理獎勵顯示
+        if (currentWonPrize) {
+            document.getElementById('cert-render-reward-text').innerText = currentWonPrize;
+            document.getElementById('cert-render-reward-box').style.display = 'block';
+        } else {
+            document.getElementById('cert-render-reward-box').style.display = 'none';
+        }
+
+        // 4. 顯示彈出視窗
+        document.getElementById('preview-modal').style.display = 'flex';
+    }
+
+    // ★ 儲存憑證圖片 (從預覽視窗截圖)
+    function saveCertificateFile() {
+        const cardElement = document.getElementById('certificate-card');
+        const btn = document.getElementById('btn-save-cert');
+        const originalText = btn.innerText;
+        
+        btn.innerText = "🔄 儲存中..."; btn.disabled = true;
+
+        html2canvas(cardElement, {
+            scale: 2, useCORS: true, backgroundColor: "#f8f9fa"
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `生存認證憑證_${playerName}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            btn.innerText = originalText; btn.disabled = false;
+            
+            const toast = document.getElementById('toast');
+            if(toast) { 
+                toast.innerText = "憑證已下載！";
+                toast.style.display = 'block'; 
+                setTimeout(() => toast.style.display = 'none', 3000); 
+            }
+        }).catch(err => {
+            console.error("憑證生成失敗:", err);
+            btn.innerText = "❌ 失敗"; setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+        });
+    }
+
+    function closePreviewModal() {
+        document.getElementById('preview-modal').style.display = 'none';
     }
 
     function fireworksEffect() {
