@@ -730,63 +730,104 @@
         else { showScreen('screen-result-good'); }
     }
 
-    // ★ IG 尺寸 (4:5) 截圖功能優化
+// ★ IG 尺寸 (4:5) 截圖功能優化 V2
     function downloadImage(elementId, bgColor) {
         const element = document.getElementById(elementId);
         const btn = event.target;
         const originalText = btn.innerText;
         btn.innerText = "🔄 處理中..."; btn.disabled = true;
         
-        // 1. 備份原始樣式
-        const originalWidth = element.style.width;
-        const originalPadding = element.style.padding;
-        const originalBoxSizing = element.style.boxSizing;
-        const originalDisplay = element.style.display;
-        const originalFlexDirection = element.style.flexDirection;
-        const originalJustify = element.style.justifyContent;
-        const originalAlign = element.style.alignItems;
+        // --- 1. 備份原始樣式 ---
+        const originalStyle = {
+            width: element.style.width,
+            minHeight: element.style.minHeight,
+            padding: element.style.padding,
+            boxSizing: element.style.boxSizing,
+            display: element.style.display,
+            flexDirection: element.style.flexDirection,
+            justifyContent: element.style.justifyContent,
+            alignItems: element.style.alignItems
+        };
 
-        // 2. 設定 IG Portrait 尺寸 (4:5)
-        // 設定寬度 800px，高度最少 1000px，確保比例正確
+        // 備份內部卡片 (.card-box) 的樣式，這是關鍵！
+        const card = element.querySelector('.card-box');
+        const originalCardStyle = {
+            width: card.style.width,
+            maxWidth: card.style.maxWidth,
+            margin: card.style.margin,
+            boxShadow: card.style.boxShadow // 截圖時可以調整陰影讓它更立體
+        };
+
+        // --- 2. 設定 IG Portrait 尺寸 (4:5) 與 RWD 布局 ---
+        // 設定畫布總寬高
         element.style.width = "800px"; 
         element.style.minHeight = "1000px"; 
         element.style.boxSizing = "border-box";
-        element.style.padding = "60px 80px"; // 適度留白
+        // 給予適當的留白，讓卡片懸浮在中間
+        element.style.padding = "60px 40px"; 
         
-        // 使用 Flexbox 讓內容在長條圖中垂直置中
+        // 使用 Flexbox 讓內容垂直置中
         element.style.display = "flex";
         element.style.flexDirection = "column";
         element.style.justifyContent = "center";
         element.style.alignItems = "center";
 
+        // ★★★ 關鍵修改：限制內部白色卡片的寬度，避免橫向拉伸 ★★★
+        // 設定為 90% 寬度，但不超過 550px，這樣在 800px 的圖中看起來就是直式卡片
+        card.style.width = "100%";
+        card.style.maxWidth = "550px"; 
+        card.style.margin = "0 auto";
+        // 加大陰影讓它在圖片中更有層次感
+        card.style.boxShadow = "10px 10px 0px rgba(0,0,0,0.5)";
+
+        // 啟動截圖
         html2canvas(element, {
-            scale: 2,
+            scale: 2, // 高解析度
             useCORS: true,
             backgroundColor: bgColor,
             windowWidth: 1600 
         }).then(canvas => {
-            // 3. 還原樣式
-            element.style.width = originalWidth;
-            element.style.minHeight = "";
-            element.style.padding = originalPadding;
-            element.style.boxSizing = originalBoxSizing;
-            element.style.display = originalDisplay;
-            element.style.flexDirection = originalFlexDirection;
-            element.style.justifyContent = originalJustify;
-            element.style.alignItems = originalAlign;
+            // --- 3. 還原樣式 (非常重要，不然網頁會壞掉) ---
+            element.style.width = originalStyle.width;
+            element.style.minHeight = originalStyle.minHeight;
+            element.style.padding = originalStyle.padding;
+            element.style.boxSizing = originalStyle.boxSizing;
+            element.style.display = originalStyle.display;
+            element.style.flexDirection = originalStyle.flexDirection;
+            element.style.justifyContent = originalStyle.justifyContent;
+            element.style.alignItems = originalStyle.alignItems;
 
+            // 還原卡片樣式
+            card.style.width = originalCardStyle.width;
+            card.style.maxWidth = originalCardStyle.maxWidth;
+            card.style.margin = originalCardStyle.margin;
+            card.style.boxShadow = originalCardStyle.boxShadow;
+
+            // 下載動作
             const link = document.createElement('a');
             link.download = `生存測驗戰報_${playerName}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
+            
+            // UI 復原
             btn.innerText = originalText; btn.disabled = false;
             const toast = document.getElementById('toast');
             toast.style.display = 'block'; setTimeout(() => toast.style.display = 'none', 3000);
         }).catch(err => {
             console.error("生成失敗:", err);
-            // 出錯也要還原
-            element.style.width = originalWidth; element.style.minHeight = ""; element.style.padding = originalPadding; element.style.boxSizing = originalBoxSizing;
-            element.style.display = originalDisplay; element.style.flexDirection = originalFlexDirection;
+            // 發生錯誤也要還原，不然使用者畫面會卡在截圖模式
+            element.style.width = originalStyle.width;
+            element.style.minHeight = originalStyle.minHeight;
+            element.style.padding = originalStyle.padding;
+            element.style.boxSizing = originalStyle.boxSizing;
+            element.style.display = originalStyle.display;
+            element.style.flexDirection = originalStyle.flexDirection;
+            
+            card.style.width = originalCardStyle.width;
+            card.style.maxWidth = originalCardStyle.maxWidth;
+            card.style.margin = originalCardStyle.margin;
+            card.style.boxShadow = originalCardStyle.boxShadow;
+
             btn.innerText = "❌ 失敗"; setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
         });
     }
