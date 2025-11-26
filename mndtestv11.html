@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>全民防衛生存測驗 V11 雲端加強版</title>
+    <title>全民防衛生存測驗 V13</title>
     
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -28,6 +28,12 @@
         }
 
         html, body { margin: 0; padding: 0; overflow-x: hidden; min-height: 100%; }
+        
+        /* 全局 Box-sizing 修正 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         body {
             background-color: var(--theme-bg);
             color: var(--theme-text-outside);
@@ -35,11 +41,6 @@
             font-weight: 700; 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
             transition: background-color 0.5s;
-        }
-
-        /* 全局 Box-sizing 修正，避免跑版 */
-        *, *::before, *::after {
-            box-sizing: border-box;
         }
 
         .container { width: 95%; max-width: 600px; min-height: 100vh; padding: 40px 0; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; position: relative; }
@@ -71,7 +72,6 @@
         .input-group { margin: 15px 0; text-align: left; width: 100%; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 1.1rem; font-weight: 900; }
         
-        /* 修正名字框跑邊問題 */
         .input-name {
             width: 100%; 
             padding: 15px; 
@@ -80,7 +80,6 @@
             background: #f9f9f9; color: var(--card-text); 
             font-size: 1.2rem; font-weight: bold; 
             outline: none; font-family: inherit;
-            /* 確保不會被 padding 撐開 */
             max-width: 100%; 
         }
         .input-name:focus { box-shadow: 3px 3px 0px rgba(0,0,0,1); background: #fff; }
@@ -155,15 +154,15 @@
         .btn-action:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
         .btn-secondary { background: #fff; color: #000; border: 2px solid #000; }
         
-        /* 修正連結按鈕樣式 (長標題自動縮小與換行) */
+        /* 修正連結按鈕樣式 */
         .btn-link { 
             background: #0056b3; color: #fff; border: 2px solid #fff; margin: 0 auto 10px auto; 
-            white-space: normal; /* 允許換行 */
+            white-space: normal;
             line-height: 1.2;
-            height: auto; /* 高度自適應 */
-            min-height: 54px; /* 保持按鈕手感 */
+            height: auto; 
+            min-height: 54px; 
             padding: 10px 20px;
-            font-size: clamp(0.9rem, 4vw, 1.1rem); /* 根據螢幕寬度自動縮小字體 */
+            font-size: clamp(0.9rem, 4vw, 1.1rem);
         }
         
         .btn-audio { background: #f0f0f0; color: #333; border: 1px solid #999; font-size: 1rem; padding: 10px 20px; width: auto; display: inline-block; margin-top: 10px; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 2px 2px 0 rgba(0,0,0,0.2); transition: 0.1s; }
@@ -199,7 +198,7 @@
     
     <div id="screen-start" class="screen active">
         <div class="start-content" style="width:100%; max-width:500px;">
-            <h1>🛡️ 全民防衛生存測驗<br><span style="font-size:1.2rem; display:block; margin-top:5px;">V11 雲端加強版</span></h1>
+            <h1>🛡️ 全民防衛生存測驗<br><span style="font-size:1.2rem; display:block; margin-top:5px;">V13 穩定版</span></h1>
             <p class="subtitle">做好準備，保護自己！</p>
 
             <div class="card-box login-box">
@@ -340,7 +339,7 @@
             
             <div class="result-right">
                 <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時:臺灣全民安全指引</a>
-                <button class="btn-action" onclick="downloadImage('export-good', '#C04000')">📸 下載戰報</button>
+                <button class="btn-action" onclick="downloadImage('export-good', '#C04000')">📸 下載 IG 戰報</button>
                 <button id="btn-csv-good" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下載答題明細 (.csv)</button>
                 <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
                 <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新測驗</button>
@@ -378,7 +377,7 @@
 
             <div class="result-right">
                 <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時：臺灣全民安全指引</a>
-                <button class="btn-action" onclick="downloadImage('export-bad', '#EE1C25')">📸 下载 IG 感谢状</button>
+                <button class="btn-action" onclick="downloadImage('export-bad', '#EE1C25')">📸 下载感谢状</button>
                 <button id="btn-csv-bad" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下载详细报表 (.csv)</button>
                 <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
                 <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新学习</button>
@@ -398,9 +397,9 @@
 
 <script>
     // ★ 設定區域：請將您的 Google Sheet CSV 連結貼在這裡
-    const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0Wkcims9kNqO1lPiyC-JJbDVMv1WkLoO7ch1_l1OfiW1QmEJiqvKSlcjmSfD9V5DCT76NrF4TdwGR/pub?output=csv"; 
+    const GOOGLE_SHEET_CSV_URL = "YOUR_GOOGLE_SHEET_CSV_URL"; 
 
-    // Google Sheet 連結 (全民防災資料庫 - 資料庫)
+    // Google Sheet 連結
     const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdW4Pn6_2RY0Fjdm4VjtnRBLsyBOwCHXxN6Ydt8uCb9Htb-CQ/formResponse";
     const ENTRY_ID_NAME = "entry.2026948411";
     const ENTRY_ID_SCORE = "entry.613612201";
@@ -408,7 +407,7 @@
     const ENTRY_ID_WRONG = "entry.2029704736";
     const ENTRY_ID_TIME = "entry.603554255";
     const ENTRY_ID_SCHOOL = "entry.1859416093"; 
-        // 代碼
+    // ★★★ 請在此填入 Google 表單「認證代碼」欄位的 entry ID ★★★
     const ENTRY_ID_CODE = "entry.1435004792"; 
 
     let fullDB = []; 
@@ -684,13 +683,19 @@
         sendData(playerName, finalScore, timeUsed, survivorCode, wrongAnswers);
     }
 
+    // ★ 資料傳送修正：確保代碼回傳
     function sendData(name, score, time, code, wrongList) {
         const formData = new FormData();
         formData.append(ENTRY_ID_SCHOOL, playerSchool);
         formData.append(ENTRY_ID_NAME, name);
         formData.append(ENTRY_ID_SCORE, score);
         formData.append(ENTRY_ID_TIME, time);
-        if(ENTRY_ID_CODE) formData.append(ENTRY_ID_CODE, code);
+        
+        if(code && ENTRY_ID_CODE && ENTRY_ID_CODE.length > 5) {
+            formData.append(ENTRY_ID_CODE, code);
+        } else {
+            console.warn("⚠️ 警告：未設定 ENTRY_ID_CODE，無法傳送認證代碼至 Google Sheet！");
+        }
         
         let wrongText = wrongList.length > 0 ? wrongList.map(w => w.q).join(" | ") : "無 (全對)";
         formData.append(ENTRY_ID_WRONG, wrongText);
@@ -730,109 +735,49 @@
         else { showScreen('screen-result-good'); }
     }
 
-// ★ IG 完美尺寸 (4:5) 截圖功能
+    // ★ 還原為簡單的第一代截圖代碼 (鎖定 600px 寬度)
     function downloadImage(elementId, bgColor) {
         const element = document.getElementById(elementId);
         const btn = event.target;
         const originalText = btn.innerText;
         
-        // 鎖定按鈕，避免重複點擊
-        btn.innerText = "🔄 處理中..."; 
+        btn.innerText = "🔄 圖片生成中...";
         btn.disabled = true;
-        
-        // 1. 備份原始樣式 (為了截圖後可以還原)
-        const originalStyle = {
-            width: element.style.width,
-            minHeight: element.style.minHeight,
-            padding: element.style.padding,
-            boxSizing: element.style.boxSizing,
-            display: element.style.display,
-            flexDirection: element.style.flexDirection,
-            justifyContent: element.style.justifyContent,
-            alignItems: element.style.alignItems,
-            gap: element.style.gap
-        };
 
-        // 備份內部白色卡片 (.card-box) 的樣式
-        const card = element.querySelector('.card-box');
-        const originalCardStyle = {
-            width: card.style.width,
-            maxWidth: card.style.maxWidth,
-            margin: card.style.margin,
-            boxShadow: card.style.boxShadow
-        };
+        // 手機版截圖時，暫時將寬度鎖定為 600px 以獲得清晰的海報比例
+        const originalWidth = element.style.width;
+        element.style.width = "600px"; 
 
-        // --- 2. 設定 IG Portrait 尺寸 (4:5) ---
-        // 寬度 800px，高度 1000px
-        element.style.width = "800px"; 
-        element.style.minHeight = "1000px"; 
-        element.style.boxSizing = "border-box";
-        element.style.padding = "60px 40px"; // 上下留白 60px，左右 40px
-        
-        // 使用 Flexbox 讓所有內容 (標題、卡片、頁尾) 垂直置中
-        element.style.display = "flex";
-        element.style.flexDirection = "column";
-        element.style.justifyContent = "center"; // 垂直居中
-        element.style.alignItems = "center";     // 水平居中
-        element.style.gap = "20px";              // 元素之間的間距
-
-        // ★★★ 關鍵：限制卡片寬度，做出「海報感」 ★★★
-        // 設定最大寬度 520px (800px 的 65%)，這樣左右會有明顯的橘色背景
-        card.style.width = "100%";
-        card.style.maxWidth = "520px"; 
-        card.style.margin = "0"; // 因為外層已經置中，這裡歸零
-        // 加深陰影，讓卡片在圖片上更立體
-        card.style.boxShadow = "12px 12px 0px rgba(0,0,0,0.4)";
-
-        // 3. 執行截圖
         html2canvas(element, {
-            scale: 2, // 2倍解析度，讓文字清晰
+            scale: 2,
             useCORS: true,
-            backgroundColor: bgColor, // 傳入背景色 (#C04000 或 #EE1C25)
-            windowWidth: 1600 // 模擬大螢幕渲染，避免 RWD 跑版
+            backgroundColor: bgColor,
+            windowWidth: 1200 // 虛擬視窗寬度，確保截圖不跑版
         }).then(canvas => {
-            // --- 4. 還原樣式 (讓網頁恢復原狀) ---
-            element.style.width = originalStyle.width;
-            element.style.minHeight = originalStyle.minHeight;
-            element.style.padding = originalStyle.padding;
-            element.style.boxSizing = originalStyle.boxSizing;
-            element.style.display = originalStyle.display;
-            element.style.flexDirection = originalStyle.flexDirection;
-            element.style.justifyContent = originalStyle.justifyContent;
-            element.style.alignItems = originalStyle.alignItems;
-            element.style.gap = originalStyle.gap;
+            element.style.width = originalWidth; // 恢復原狀
 
-            // 還原卡片
-            card.style.width = originalCardStyle.width;
-            card.style.maxWidth = originalCardStyle.maxWidth;
-            card.style.margin = originalCardStyle.margin;
-            card.style.boxShadow = originalCardStyle.boxShadow;
-
-            // 下載圖片
             const link = document.createElement('a');
             link.download = `生存測驗戰報_${playerName}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
             
-            // UI 復原
-            btn.innerText = originalText; 
+            btn.innerText = originalText;
             btn.disabled = false;
+            
             const toast = document.getElementById('toast');
-            toast.style.display = 'block'; 
-            setTimeout(() => toast.style.display = 'none', 3000);
-
+            if(toast) {
+                toast.innerText = "圖片已下載！";
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 3000);
+            }
         }).catch(err => {
             console.error("生成失敗:", err);
-            // 發生錯誤也要還原，避免畫面卡住
-            element.style.width = originalStyle.width;
-            element.style.minHeight = originalStyle.minHeight;
-            element.style.padding = originalStyle.padding;
-            element.style.display = originalStyle.display;
-            
-            card.style.maxWidth = originalCardStyle.maxWidth;
-
-            btn.innerText = "❌ 失敗"; 
-            setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+            element.style.width = originalWidth;
+            btn.innerText = "❌ 失敗";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }, 2000);
         });
     }
 
