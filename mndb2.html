@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>防衛勇士認證解碼器 (雲端連線版)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --main-color: #00ff41; 
+            --fail-color: #ff003c;
+            --warn-color: #ffbd2e;
+            --panel-bg: #161b22;
+        }
+        body { background-color: var(--bg-color); color: var(--main-color); font-family: 'Share Tech Mono', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow: hidden; text-transform: uppercase; }
+        .grid-bg { position: absolute; width: 200%; height: 200%; background-image: linear-gradient(rgba(0, 255, 65, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px); animation: gridMove 20s linear infinite; z-index: -1; }
+        @keyframes gridMove { 0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); } 100% { transform: perspective(500px) rotateX(60deg) translateY(50px) translateZ(-200px); } }
+        .container { width: 90%; max-width: 500px; text-align: center; position: relative; z-index: 10; }
+        h1 { font-size: 2rem; text-shadow: 0 0 10px var(--main-color); margin-bottom: 5px; letter-spacing: 2px; }
+        .subtitle { font-family: 'Noto Sans TC', sans-serif; font-size: 1rem; opacity: 0.7; margin-bottom: 40px; }
+        .input-box { background: var(--panel-bg); border: 2px solid var(--main-color); padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); position: relative; }
+        .corner { position: absolute; width: 10px; height: 10px; border: 2px solid var(--main-color); transition: 0.3s; }
+        .tl { top: -2px; left: -2px; border-right: none; border-bottom: none; } .tr { top: -2px; right: -2px; border-left: none; border-bottom: none; } .bl { bottom: -2px; left: -2px; border-right: none; border-top: none; } .br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+        input { background: transparent; border: none; border-bottom: 2px solid #333; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 2.5rem; text-align: center; width: 100%; outline: none; letter-spacing: 10px; margin-bottom: 20px; text-transform: uppercase; }
+        input:focus { border-bottom-color: var(--main-color); }
+        button { background: var(--main-color); color: #000; border: none; padding: 15px 40px; font-size: 1.5rem; font-weight: bold; font-family: 'Share Tech Mono', monospace; cursor: pointer; clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); transition: 0.2s; }
+        button:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--main-color); } button:active { transform: scale(0.95); }
+        button:disabled { background: #555; cursor: not-allowed; }
+
+        .result-area { margin-top: 30px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .scanning-bar { width: 100%; height: 4px; background: #333; position: relative; overflow: hidden; display: none; margin-bottom: 10px; }
+        .scanning-bar::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: var(--main-color); box-shadow: 0 0 10px var(--main-color); animation: scan 1s infinite linear; }
+        @keyframes scan { 0% { left: -30%; } 100% { left: 100%; } }
+        
+        .status-text { font-size: 1.5rem; margin-top: 10px; letter-spacing: 2px; }
+        .status-valid { color: var(--main-color); text-shadow: 0 0 10px var(--main-color); }
+        .status-invalid { color: var(--fail-color); text-shadow: 0 0 10px var(--fail-color); }
+
+        .detail-info { font-family: 'Noto Sans TC', sans-serif; font-size: 1rem; margin-top: 10px; color: #fff; opacity: 0.9; display: none; animation: fadeIn 1s; line-height: 1.6; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; width: 100%; box-sizing: border-box;}
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 0.9; } }
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <h1>CLOUD DECODER</h1>
+        <p class="subtitle">防衛勇士資料庫連線中...</p>
+
+        <div class="input-box">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+            
+            <input type="text" id="code-input" placeholder="______" maxlength="15">
+            <button id="btn-decode" onclick="startVerification()">CONNECT</button>
+        </div>
+
+        <div class="result-area">
+            <div id="scan-bar" class="scanning-bar"></div>
+            <div id="status" class="status-text">WAITING FOR INPUT...</div>
+            <div id="details" class="detail-info"></div>
+        </div>
+    </div>
+
+    <script>
+        // ★★★ 請替換成你發布到網路的 CSV 連結 ★★★
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT4288sV3mgDdblgkpBmu5Ju9LyckN9CWMT_zZquhqVimdsOhxFdGXZqe9rXF64luRMDCaj49vxi1Hp/pub?gid=1924906304&single=true&output=csv"; 
+
+        // 欄位關鍵字設定 (模糊搜尋)
+        const COL_NAME_KEY = "名字";   
+        const COL_SCORE_KEY = "分數";  
+        const COL_CODE_KEY = "代碼";   
+        const COL_SCHOOL_KEY = "學校";
+
+        function startVerification() {
+            const inputEl = document.getElementById('code-input');
+            const code = inputEl.value.trim();
+            if (!code) return;
+
+            const btn = document.getElementById('btn-decode');
+            const scanBar = document.getElementById('scan-bar');
+            const status = document.getElementById('status');
+            const details = document.getElementById('details');
+
+            btn.disabled = true;
+            btn.innerText = "SEARCHING...";
+            status.innerHTML = "ESTABLISHING CONNECTION...";
+            status.className = "status-text";
+            details.style.display = "none";
+            scanBar.style.display = "block";
+
+            Papa.parse(GOOGLE_SHEET_CSV_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    verifyData(results.data, code);
+                    btn.disabled = false;
+                    btn.innerText = "CONNECT";
+                    scanBar.style.display = "none";
+                },
+                error: function(err) {
+                    console.error("CSV Error:", err);
+                    showResult(false, "DB_CONNECTION_FAIL", "無法連線至資料庫");
+                    btn.disabled = false;
+                    btn.innerText = "RETRY";
+                    scanBar.style.display = "none";
+                }
+            });
+        }
+
+        function verifyData(data, inputCode) {
+            const record = data.find(row => {
+                let codeVal = getColumnValue(row, COL_CODE_KEY); 
+                return codeVal && codeVal.toUpperCase().trim() === inputCode.toUpperCase().trim();
+            });
+
+            if (!record) {
+                showResult(false, "INVALID_CODE", "查無此代碼 - 拒絕存取");
+                return;
+            }
+
+            const nameVal = getColumnValue(record, COL_NAME_KEY);
+            const scoreVal = getColumnValue(record, COL_SCORE_KEY);
+            
+            let isIntruder = false;
+            let failReason = "";
+
+            if (!nameVal || nameVal.trim() === "") { isIntruder = true; failReason = "姓名欄位遺失"; }
+            if (!scoreVal || scoreVal.trim() === "") { isIntruder = true; failReason = "分數數據損毀"; }
+
+            if (isIntruder) {
+                showResult(false, "DATA_CORRUPTED", `警報：非法資料格式 (${failReason})`);
+            } else {
+                const schoolVal = getColumnValue(record, COL_SCHOOL_KEY) || "個人/未知單位";
+                showResult(true, "ACCESS GRANTED", `
+                    姓名: ${nameVal}<br>
+                    分數: ${scoreVal}<br>
+                    單位: ${schoolVal}<br>
+                    狀態: <span style="color:#0f0">資料庫驗證通過</span>
+                `);
+            }
+        }
+
+        function getColumnValue(row, keyKeyword) {
+            const keys = Object.keys(row);
+            const targetKey = keys.find(k => k.includes(keyKeyword));
+            return targetKey ? row[targetKey] : null;
+        }
+
+        function showResult(isValid, statusMsg, detailMsg) {
+            const status = document.getElementById('status');
+            const details = document.getElementById('details');
+            
+            status.innerHTML = statusMsg;
+            details.innerHTML = detailMsg;
+            details.style.display = "block";
+
+            if (isValid) status.className = "status-text status-valid";
+            else status.className = "status-text status-invalid";
+        }
+
+        document.getElementById('code-input').addEventListener("keypress", function(event) {
+            if (event.key === "Enter") startVerification();
+        });
+    </script>
+</body>
+</html>
