@@ -340,7 +340,7 @@
             
             <div class="result-right">
                 <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時:臺灣全民安全指引</a>
-                <button class="btn-action" onclick="downloadImage('export-good', '#C04000')">📸 下載 IG 戰報 (4:5)</button>
+                <button class="btn-action" onclick="downloadImage('export-good', '#C04000')">📸 下載戰報</button>
                 <button id="btn-csv-good" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下載答題明細 (.csv)</button>
                 <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
                 <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新測驗</button>
@@ -378,7 +378,7 @@
 
             <div class="result-right">
                 <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時：臺灣全民安全指引</a>
-                <button class="btn-action" onclick="downloadImage('export-bad', '#EE1C25')">📸 下载 IG 感谢状 (4:5)</button>
+                <button class="btn-action" onclick="downloadImage('export-bad', '#EE1C25')">📸 下载 IG 感谢状</button>
                 <button id="btn-csv-bad" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下载详细报表 (.csv)</button>
                 <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
                 <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新学习</button>
@@ -730,14 +730,17 @@
         else { showScreen('screen-result-good'); }
     }
 
-// ★ IG 尺寸 (4:5) 截圖功能優化 V2
+// ★ IG 完美尺寸 (4:5) 截圖功能
     function downloadImage(elementId, bgColor) {
         const element = document.getElementById(elementId);
         const btn = event.target;
         const originalText = btn.innerText;
-        btn.innerText = "🔄 處理中..."; btn.disabled = true;
         
-        // --- 1. 備份原始樣式 ---
+        // 鎖定按鈕，避免重複點擊
+        btn.innerText = "🔄 處理中..."; 
+        btn.disabled = true;
+        
+        // 1. 備份原始樣式 (為了截圖後可以還原)
         const originalStyle = {
             width: element.style.width,
             minHeight: element.style.minHeight,
@@ -746,48 +749,49 @@
             display: element.style.display,
             flexDirection: element.style.flexDirection,
             justifyContent: element.style.justifyContent,
-            alignItems: element.style.alignItems
+            alignItems: element.style.alignItems,
+            gap: element.style.gap
         };
 
-        // 備份內部卡片 (.card-box) 的樣式，這是關鍵！
+        // 備份內部白色卡片 (.card-box) 的樣式
         const card = element.querySelector('.card-box');
         const originalCardStyle = {
             width: card.style.width,
             maxWidth: card.style.maxWidth,
             margin: card.style.margin,
-            boxShadow: card.style.boxShadow // 截圖時可以調整陰影讓它更立體
+            boxShadow: card.style.boxShadow
         };
 
-        // --- 2. 設定 IG Portrait 尺寸 (4:5) 與 RWD 布局 ---
-        // 設定畫布總寬高
+        // --- 2. 設定 IG Portrait 尺寸 (4:5) ---
+        // 寬度 800px，高度 1000px
         element.style.width = "800px"; 
         element.style.minHeight = "1000px"; 
         element.style.boxSizing = "border-box";
-        // 給予適當的留白，讓卡片懸浮在中間
-        element.style.padding = "30px 20px"; 
+        element.style.padding = "60px 40px"; // 上下留白 60px，左右 40px
         
-        // 使用 Flexbox 讓內容垂直置中
+        // 使用 Flexbox 讓所有內容 (標題、卡片、頁尾) 垂直置中
         element.style.display = "flex";
         element.style.flexDirection = "column";
-        element.style.justifyContent = "center";
-        element.style.alignItems = "center";
+        element.style.justifyContent = "center"; // 垂直居中
+        element.style.alignItems = "center";     // 水平居中
+        element.style.gap = "20px";              // 元素之間的間距
 
-        // ★★★ 關鍵修改：限制內部白色卡片的寬度，避免橫向拉伸 ★★★
-        // 設定為 90% 寬度，但不超過 550px，這樣在 800px 的圖中看起來就是直式卡片
+        // ★★★ 關鍵：限制卡片寬度，做出「海報感」 ★★★
+        // 設定最大寬度 520px (800px 的 65%)，這樣左右會有明顯的橘色背景
         card.style.width = "100%";
-        card.style.maxWidth = "300px"; 
-        card.style.margin = "0 auto";
-        // 加大陰影讓它在圖片中更有層次感
-        card.style.boxShadow = "10px 10px 0px rgba(0,0,0,0.5)";
+        card.style.maxWidth = "520px"; 
+        card.style.margin = "0"; // 因為外層已經置中，這裡歸零
+        // 加深陰影，讓卡片在圖片上更立體
+        card.style.boxShadow = "12px 12px 0px rgba(0,0,0,0.4)";
 
-        // 啟動截圖
+        // 3. 執行截圖
         html2canvas(element, {
-            scale: 2, // 高解析度
+            scale: 2, // 2倍解析度，讓文字清晰
             useCORS: true,
-            backgroundColor: bgColor,
-            windowWidth: 1600 
+            backgroundColor: bgColor, // 傳入背景色 (#C04000 或 #EE1C25)
+            windowWidth: 1600 // 模擬大螢幕渲染，避免 RWD 跑版
         }).then(canvas => {
-            // --- 3. 還原樣式 (非常重要，不然網頁會壞掉) ---
+            // --- 4. 還原樣式 (讓網頁恢復原狀) ---
             element.style.width = originalStyle.width;
             element.style.minHeight = originalStyle.minHeight;
             element.style.padding = originalStyle.padding;
@@ -796,39 +800,39 @@
             element.style.flexDirection = originalStyle.flexDirection;
             element.style.justifyContent = originalStyle.justifyContent;
             element.style.alignItems = originalStyle.alignItems;
+            element.style.gap = originalStyle.gap;
 
-            // 還原卡片樣式
+            // 還原卡片
             card.style.width = originalCardStyle.width;
             card.style.maxWidth = originalCardStyle.maxWidth;
             card.style.margin = originalCardStyle.margin;
             card.style.boxShadow = originalCardStyle.boxShadow;
 
-            // 下載動作
+            // 下載圖片
             const link = document.createElement('a');
             link.download = `生存測驗戰報_${playerName}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
             
             // UI 復原
-            btn.innerText = originalText; btn.disabled = false;
+            btn.innerText = originalText; 
+            btn.disabled = false;
             const toast = document.getElementById('toast');
-            toast.style.display = 'block'; setTimeout(() => toast.style.display = 'none', 3000);
+            toast.style.display = 'block'; 
+            setTimeout(() => toast.style.display = 'none', 3000);
+
         }).catch(err => {
             console.error("生成失敗:", err);
-            // 發生錯誤也要還原，不然使用者畫面會卡在截圖模式
+            // 發生錯誤也要還原，避免畫面卡住
             element.style.width = originalStyle.width;
             element.style.minHeight = originalStyle.minHeight;
             element.style.padding = originalStyle.padding;
-            element.style.boxSizing = originalStyle.boxSizing;
             element.style.display = originalStyle.display;
-            element.style.flexDirection = originalStyle.flexDirection;
             
-            card.style.width = originalCardStyle.width;
             card.style.maxWidth = originalCardStyle.maxWidth;
-            card.style.margin = originalCardStyle.margin;
-            card.style.boxShadow = originalCardStyle.boxShadow;
 
-            btn.innerText = "❌ 失敗"; setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+            btn.innerText = "❌ 失敗"; 
+            setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
         });
     }
 
