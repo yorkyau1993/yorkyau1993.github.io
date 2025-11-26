@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>全民防衛生存測驗 V26 緊湊版</title>
+    <title>全民防衛生存測驗 V29 稱號回歸版</title>
     
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -276,7 +276,7 @@
     
     <div id="screen-start" class="screen active">
         <div class="start-content" style="width:100%; max-width:500px;">
-            <h1>🛡️ 全民防衛生存測驗<br><span style="font-size:1.2rem; display:block; margin-top:5px;">V26 緊湊版</span></h1>
+            <h1>🛡️ 全民防衛生存測驗<br><span style="font-size:1.2rem; display:block; margin-top:5px;">V29 稱號回歸版</span></h1>
             <p class="subtitle">做好準備，保護自己！</p>
 
             <div class="card-box login-box">
@@ -460,7 +460,7 @@
                 <button class="btn-action" onclick="downloadIGReport('export-bad', '#EE1C25')">📸 下载感谢状</button>
                 <button id="btn-csv-bad" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下载详细报表 (.csv)</button>
                 <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
-                <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新学习</button>
+                <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新學習</button>
             </div>
         </div>
         
@@ -490,14 +490,14 @@
     const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdW4Pn6_2RY0Fjdm4VjtnRBLsyBOwCHXxN6Ydt8uCb9Htb-CQ/formResponse";
     const ENTRY_ID_NAME = "entry.2026948411";
     const ENTRY_ID_SCORE = "entry.613612201";
-    const ENTRY_ID_RANK = "entry.1097894505";
+    const ENTRY_ID_RANK = "entry.1097894505"; // 稱號欄位
     const ENTRY_ID_WRONG = "entry.2029704736";
     const ENTRY_ID_TIME = "entry.603554255";
     const ENTRY_ID_SCHOOL = "entry.1859416093"; 
     const ENTRY_ID_CODE = "entry.1435004792"; 
     const ENTRY_ID_PRIZE = "entry.242697873"; 
 
-    // ★ 設定 3：功能開關 true/false (是否啟用憑證與獎勵系統)
+    // ★ 設定 4：功能開關 (是否啟用憑證與獎勵系統)
     const ENABLE_CERTIFICATE = true; 
 
     let fullDB = []; 
@@ -741,9 +741,15 @@
         let finalScore = Math.round((score / questionCount) * 100);
         let timeUsed = Math.floor((Date.now() - startTime) / 1000);
         
-        // 產生全域變數，供憑證使用
         currentSurvivorCode = generateSurvivorCode();
         currentWonPrize = drawPrize(); 
+
+        // ★ 計算稱號 (無論及格與否都計算，以便回傳)
+        let rank = "待加強"; // 預設不及格稱號
+        if(finalScore === 100) rank = "傳奇指揮官";
+        else if(finalScore >= 90) rank = "生存專家";
+        else if(finalScore >= 80) rank = "防災模範";
+        else if(finalScore >= 60) rank = "合格生存者";
 
         if(gameMode === 'school') {
             document.getElementById('btn-csv-good').style.display = 'block';
@@ -755,7 +761,9 @@
 
         if (finalScore >= 60) {
             showScreen('screen-result-good');
+            
             document.getElementById('score-good').innerText = finalScore;
+            document.getElementById('rank-good').innerText = rank; // 顯示稱號
             document.getElementById('correct-good').innerText = score;
             document.getElementById('time-good').innerText = timeUsed + "s";
             document.getElementById('name-good').innerText = playerName;
@@ -765,14 +773,13 @@
                 document.getElementById('school-good').innerText = playerSchool; 
             }
 
-            // 控制憑證開關
             if(ENABLE_CERTIFICATE) {
                 document.getElementById('cert-lock-section').style.display = 'block';
                 document.getElementById('cert-render-name').innerText = playerName;
                 document.getElementById('cert-render-code').innerText = currentSurvivorCode;
                 
-                if (wonPrize) {
-                    document.getElementById('cert-render-reward-text').innerText = wonPrize;
+                if (currentWonPrize) {
+                    document.getElementById('cert-render-reward-text').innerText = currentWonPrize;
                     document.getElementById('cert-render-reward-box').style.display = 'block';
                 } else {
                     document.getElementById('cert-render-reward-box').style.display = 'none';
@@ -792,16 +799,20 @@
             }
         }
 
-        sendData(playerName, finalScore, timeUsed, currentSurvivorCode, currentWonPrize, wrongAnswers);
+        // ★ 將稱號 (rank) 傳入 sendData
+        sendData(playerName, finalScore, timeUsed, rank, currentSurvivorCode, currentWonPrize, wrongAnswers);
     }
 
-    function sendData(name, score, time, code, prize, wrongList) {
+    function sendData(name, score, time, rank, code, prize, wrongList) {
         const formData = new FormData();
-        formData.append(ENTRY_ID_SCHOOL, playerSchool);
+        formData.append(ENTRY_ID_SCHOOL, playerSchool || "個人考生");
         formData.append(ENTRY_ID_NAME, name);
         formData.append(ENTRY_ID_SCORE, score);
         formData.append(ENTRY_ID_TIME, time);
         
+        // ★ 新增：回傳稱號
+        formData.append(ENTRY_ID_RANK, rank);
+
         if(ENABLE_CERTIFICATE) {
             if(code) formData.append(ENTRY_ID_CODE, code);
             if(prize) formData.append(ENTRY_ID_PRIZE, prize);
@@ -809,7 +820,19 @@
         
         let wrongText = wrongList.length > 0 ? wrongList.map(w => w.q).join(" | ") : "無 (全對)";
         formData.append(ENTRY_ID_WRONG, wrongText);
-        fetch(GOOGLE_FORM_URL, { method: "POST", body: formData, mode: "no-cors" }).catch(err => { console.error("Data Error", err); });
+
+        console.log("Sending Data:", {
+            school: playerSchool || "個人考生",
+            name: name,
+            score: score,
+            rank: rank, // 檢查這裡是否有值
+            code: code || "無",
+            prize: prize || "無"
+        });
+
+        fetch(GOOGLE_FORM_URL, { method: "POST", body: formData, mode: "no-cors" })
+            .then(() => console.log("Data sent (no-cors)"))
+            .catch(err => console.error("Data Error", err));
     }
 
     function downloadCSV() {
@@ -871,13 +894,10 @@
         });
     }
 
-    // ★ 彈出憑證預覽視窗 (V24 真實渲染)
     function showCertificatePreview() {
-        // 1. 填入資料
         document.getElementById('cert-render-name').innerText = playerName;
         document.getElementById('cert-render-code').innerText = currentSurvivorCode;
         
-        // 2. 生成 QR Code (直接畫在 DOM 上，瀏覽器一定會渲染)
         const qrContainer = document.getElementById("cert-real-qr");
         qrContainer.innerHTML = ""; 
         new QRCode(qrContainer, {
@@ -887,7 +907,6 @@
             correctLevel : QRCode.CorrectLevel.H
         });
 
-        // 3. 處理獎勵顯示
         if (currentWonPrize) {
             document.getElementById('cert-render-reward-text').innerText = currentWonPrize;
             document.getElementById('cert-render-reward-box').style.display = 'block';
@@ -895,11 +914,9 @@
             document.getElementById('cert-render-reward-box').style.display = 'none';
         }
 
-        // 4. 顯示彈出視窗
         document.getElementById('preview-modal').style.display = 'flex';
     }
 
-    // ★ 儲存憑證圖片 (從預覽視窗截圖)
     function saveCertificateFile() {
         const cardElement = document.getElementById('certificate-card');
         const btn = document.getElementById('btn-save-cert');
