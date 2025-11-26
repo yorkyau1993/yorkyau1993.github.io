@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>全民防衛生存測驗 V21 強力修復版</title>
+    
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800;900&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --theme-bg: #C04000;
+            --theme-text-outside: #FFFFFF;
+            --card-bg: #FFFFFF;
+            --card-text: #000000;
+            --card-border: #000000;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --error-bg: #f8d7da;
+            --error-text: #721c24;
+            --bad-end-bg: #EE1C25; 
+        }
+
+        html, body { margin: 0; padding: 0; overflow-x: hidden; min-height: 100%; }
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background-color: var(--theme-bg);
+            color: var(--theme-text-outside);
+            font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+            font-weight: 700; 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
+            transition: background-color 0.5s;
+        }
+
+        .container { width: 95%; max-width: 600px; min-height: 100vh; padding: 40px 0; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; position: relative; }
+
+        @media (min-width: 800px) {
+            .container { max-width: 1200px; }
+            .quiz-layout { flex-direction: row !important; align-items: stretch; height: 65vh; min-height: 500px; }
+            .options-side { grid-template-columns: 1fr 1fr !important; grid-template-rows: 1fr 1fr !important; height: 100%; }
+            .result-layout { flex-direction: row !important; align-items: flex-start; }
+            h1 { margin-top: 20px; font-size: 3rem; }
+        }
+
+        h1 { color: var(--theme-text-outside); font-size: 2.2rem; margin: 0 0 10px 0; text-shadow: 3px 3px 0px rgba(0,0,0,0.2); line-height: 1.2; text-align: center; font-family: "M PLUS Rounded 1c", sans-serif; }
+        p.subtitle { color: var(--theme-text-outside); font-size: 1.2rem; margin-top: 0; margin-bottom: 20px; opacity: 0.9; text-align: center; }
+
+        body.bad-end { background-color: var(--bad-end-bg); }
+        .bad-font-style { font-family: "SimHei", "Microsoft YaHei", sans-serif !important; }
+
+        .screen { display: none; width: 100%; animation: fadeIn 0.4s ease; flex-direction: column; align-items: center; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card-box {
+            background: var(--card-bg); color: var(--card-text); padding: 25px; border-radius: 20px; text-align: center;
+            border: 3px solid var(--card-border); box-shadow: 6px 6px 0px rgba(0,0,0,0.8);
+            font-size: 1.1rem; width: 100%; position: relative;
+        }
+
+        .input-group { margin: 15px 0; text-align: left; width: 100%; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 1.1rem; font-weight: 900; }
+        
+        .input-name {
+            width: 100%; padding: 15px; border: 2px solid var(--card-border); border-radius: 10px;
+            background: #f9f9f9; color: var(--card-text); font-size: 1.2rem; font-weight: bold; outline: none; font-family: inherit; max-width: 100%; 
+        }
+        .input-name:focus { box-shadow: 3px 3px 0px rgba(0,0,0,1); background: #fff; }
+
+        .error-msg { color: #ffcccc; background: #a00; padding: 5px 10px; border-radius: 5px; font-size: 1rem; margin-bottom: 15px; display: none; font-weight: bold; text-align: center; border: 1px solid #f00; animation: shake 0.3s; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
+
+        .mode-select-btn { flex:1; text-align:center; padding:12px; font-family: inherit; border-radius: 10px; font-size: 1.1rem; cursor: pointer; border: 2px solid #000; background: #fff;}
+        .mode-select-btn.selected { background: #000; color: #fff; }
+
+        .start-btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
+        .btn-start {
+            padding: 15px; border-radius: 50px; border: 3px solid #fff; font-size: 1.3rem; font-weight: 900; cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.3); transition: 0.1s; font-family: inherit; text-align: center; position: relative;
+        }
+        .btn-start:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+        .btn-personal { background: #000; color: #fff; }
+        .btn-challenge { background: #d00; color: #fff; border-color: #fff; }
+        .btn-school { background: #fff; color: #000; border-color: #000; }
+        
+        .quiz-layout { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        .question-side { flex: 1; display: flex; flex-direction: column; }
+        .options-side { flex: 1; display: grid; grid-template-columns: 1fr; gap: 15px; box-sizing: border-box; align-content: stretch; } 
+        .question-card { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; padding: 30px; font-size: 1.6rem; flex: 1; }
+        .q-cat-label { background: #000; color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 1rem; margin-bottom: 15px; display: inline-block;}
+        
+        .option-btn {
+            background: #fff; border: 3px solid #000; border-radius: 15px; padding: 20px; color: #000;
+            cursor: pointer; position: relative; font-weight: bold; font-size: 1.4rem; box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+            text-align: center; transition: 0.1s; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; box-sizing: border-box;
+        }
+        .option-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px rgba(0,0,0,0.2); }
+        .option-btn.correct { background: var(--success-bg); border-color: #006400; color: #004d00; }
+        .option-btn.wrong { background: var(--error-bg); border-color: #8b0000; color: #8b0000; opacity: 0.8; }
+
+        #feedback-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 999; justify-content: center; align-items: center; animation: fadeIn 0.2s; }
+        .feedback-box { background: #fff; color: #000; padding: 30px; width: 85%; max-width: 700px; border-radius: 20px; border: 5px solid #000; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.8); position: relative; max-height: 85vh; overflow-y: auto; }
+        #feedback-title { font-size: 2.2rem; margin: 0 0 15px 0; font-weight: 900; color: #000; }
+        .consequence-box { background: #300; color: #ffcccc; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 3px solid #ff0000; font-weight: bold; font-size: 1.2rem; line-height: 1.4; text-align: left; box-shadow: inset 0 0 20px #000; }
+        #feedback-content { font-size: 1.2rem; line-height: 1.6; margin-bottom: 20px; text-align: left; background: #f0f0f0; padding: 20px; border-radius: 15px; border-left: 8px solid #000; }
+        .next-q-btn { background: #000; color: #fff; border: none; padding: 12px 40px; font-size: 1.4rem; font-weight: 900; border-radius: 50px; cursor: pointer; width: 100%; }
+
+        .result-layout { display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center;}
+        .result-left { width: 100%; }
+        .result-right { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+
+        .rank-badge { background: #000; color: #fff; padding: 5px 20px; border-radius: 30px; font-size: 1.1rem; margin-bottom: 10px; display: inline-block;}
+        .score-display { font-size: 5rem; font-weight: 900; margin: 5px 0; line-height: 1; }
+        
+        .promo-container {
+            display: none;
+            border: 3px dashed var(--promo-border);
+            background: var(--promo-bg);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 15px;
+            text-align: center;
+            position: relative;
+        }
+        .promo-container::before {
+            content: "🎁 獲得獎勵";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--promo-border);
+            color: #fff;
+            padding: 2px 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .promo-text { font-size: 1.6rem; font-weight: 900; color: #d35400; letter-spacing: 1px; margin-top: 5px; word-break: break-all; }
+
+        .promo-hint-box {
+            display: none;
+            border: 2px dashed #fff;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 10px;
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        .code-container { border: 2px dashed #000; background: #f0f0f0; padding: 10px; margin-top: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-around; }
+        .code-text-area { text-align: left; }
+        .code-label { font-size: 0.9rem; font-weight: bold; color: #666; display: block; }
+        .code-value { font-size: 1.8rem; font-weight: 900; font-family: monospace; letter-spacing: 3px; color: #006400; margin-bottom: 10px; }
+        
+        /* ★ 修正重點：將 QR Code 容器設為 off-screen 而不是 display:none */
+        #qrcode { position: fixed; left: -9999px; top: 0; width: 200px; height: 200px; }
+
+        .stamp-seal { position: absolute; top: 20px; right: 20px; border: 5px double; font-size: 1.8rem; font-weight: 900; padding: 8px 20px; transform: rotate(-15deg); border-radius: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; mix-blend-mode: multiply; pointer-events: none; z-index: 10; }
+        .stamp-pass { color: #006400; border-color: #006400; } 
+        .stamp-fail { color: #d00; border-color: #d00; }        
+
+        .btn-action { display: flex; justify-content: center; align-items: center; background: #000; color: #fff; border: 2px solid #fff; border-radius: 50px; padding: 12px; font-size: 1.1rem; font-weight: 900; cursor: pointer; width: 100%; margin-bottom: 5px; text-decoration: none; text-align: center; box-shadow: 4px 4px 0 rgba(0,0,0,0.3); transition: 0.1s; font-family: inherit; max-width: 400px; }
+        .btn-action:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+        .btn-secondary { background: #fff; color: #000; border: 2px solid #000; }
+        
+        .btn-link { background: #0056b3; color: #fff; border: 2px solid #fff; margin: 0 auto 10px auto; white-space: normal; line-height: 1.2; height: auto; min-height: 54px; padding: 10px 20px; font-size: clamp(0.9rem, 4vw, 1.1rem); }
+        
+        .btn-audio { background: #f0f0f0; color: #333; border: 1px solid #999; font-size: 1rem; padding: 10px 20px; width: auto; display: inline-block; margin-top: 10px; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 2px 2px 0 rgba(0,0,0,0.2); transition: 0.1s; }
+        .btn-audio:hover { background: #fff; transform: translateY(-2px); }
+        .btn-audio:active { transform: translateY(1px); box-shadow: 0 0 0; }
+
+        .review-list { width: 100%; max-width: 800px; margin-bottom: 20px; padding: 0 15px; box-sizing: border-box; }
+        .review-item { background: #fff; border: 2px solid #000; border-radius: 10px; padding: 15px; margin-bottom: 10px; color: #000; text-align: left; box-shadow: 3px 3px 0 rgba(0,0,0,0.1); }
+        .review-ans { color: #fff; background: #000; padding: 5px 10px; margin-top: 8px; border-radius: 5px; font-weight: bold; display: inline-block;}
+        .review-desc { background: #f0f0f0; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.95rem; line-height: 1.5; color: #333; }
+
+        .footer { margin-top: 30px; text-align: center; color: #fff; padding-bottom: 20px;}
+        .footer p { margin: 5px 0; opacity: 0.8; font-size: 0.9rem; }
+        .btn-mini { display: inline-block; font-size: 0.8rem; padding: 5px 10px; border: 1px solid #fff; color: #fff; border-radius: 15px; text-decoration: none; margin-top: 5px; background: rgba(0,0,0,0.2); }
+        .btn-mini:hover { background: #000; }
+
+        .export-wrapper { padding: 20px 20px; border-radius: 20px; background: inherit; width: 100%; box-sizing: border-box; position: relative; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 15px 30px; display: none; border-radius: 30px; font-size: 1.2rem; border: 2px solid #fff; z-index: 9999; }
+        
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
+
+        /* 數位憑證樣式 */
+        #cert-lock-section { display: none; } 
+        .cert-lock-ui {
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+        }
+        .cert-lock-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+        .cert-lock-text { font-size: 1.1rem; font-weight: 900; color: #333; margin-bottom: 15px; }
+        
+        /* 隱藏的憑證生成樣板 */
+        #hidden-cert-template {
+            position: fixed; 
+            top: 0; left: -9999px; 
+            width: 600px; 
+            background: #f8f9fa;
+            border: 10px solid #000;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            box-sizing: border-box;
+            font-family: "Noto Sans TC", sans-serif;
+            color: #000;
+            z-index: -1;
+        }
+        .cert-header { font-size: 2rem; font-weight: 900; margin-bottom: 20px; border-bottom: 4px solid #000; padding-bottom: 15px; }
+        .cert-name { font-size: 1.5rem; margin-bottom: 20px; font-weight: bold; }
+        .cert-qr-box { background: #fff; border: 3px solid #000; padding: 15px; display: inline-block; border-radius: 10px; margin-bottom: 20px; }
+        /* ★ 重點：給圖片一個明確寬高，避免載入時大小是 0 */
+        .cert-qr-box img { display: block; margin: 0 auto; width: 150px; height: 150px; }
+        .cert-code-val { font-family: monospace; font-size: 1.5rem; letter-spacing: 2px; font-weight: 900; margin-bottom: 20px; color: #006400; }
+        
+        .cert-reward-box { 
+            background: #fff8e1; 
+            border: 3px dashed #ff8f00; 
+            padding: 15px; 
+            border-radius: 15px; 
+            margin-top: 10px;
+        }
+        .cert-reward-title { color: #ff8f00; font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
+        .cert-reward-content { color: #d35400; font-size: 1.8rem; font-weight: 900; }
+
+    </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+    <div style="font-size: 3rem; margin-bottom: 20px;">📡</div>
+    <h2>正在連線至國防資料庫...</h2>
+    <p>Loading Question Bank...</p>
+</div>
+
+<div id="hidden-cert-template">
+    <div class="cert-header">🛡️ 數位生存憑證</div>
+    <div class="cert-name">合格生存者：<span id="cert-render-name">XXX</span></div>
+    
+    <div class="cert-qr-box">
+        <img id="cert-render-qr-img" src="" />
+    </div>
+    
+    <div style="font-weight:bold; color:#666;">認證代碼 (Survivor Code)</div>
+    <div class="cert-code-val" id="cert-render-code">-----</div>
+
+    <div class="cert-reward-box" id="cert-render-reward-box" style="display:none;">
+        <div class="cert-reward-title">🎁 解鎖神秘獎勵</div>
+        <div class="cert-reward-content" id="cert-render-reward-text"></div>
+    </div>
+    
+    <div style="margin-top:20px; font-size:0.9rem; opacity:0.6;">全民防衛生存測驗 • 認證通過</div>
+</div>
+
+<div class="container">
+    
+    <div id="screen-start" class="screen active">
+        <div class="start-content" style="width:100%; max-width:500px;">
+            <h1>🛡️ 全民防衛生存測驗<br><span style="font-size:1.2rem; display:block; margin-top:5px;">V21 強力修復版</span></h1>
+            <p class="subtitle">做好準備，保護自己！</p>
+
+            <div class="card-box login-box">
+                <div id="start-error" class="error-msg"></div>
+
+                <div class="input-group">
+                    <label>👤 名字 / 代號 (必填)</label>
+                    <input type="text" id="player-name" class="input-name" placeholder="例如：阿吉" maxlength="15">
+                </div>
+
+                <div style="text-align:left; margin-bottom:20px;">
+                    <label style="display:block; margin-bottom:8px; font-weight:900;">題目數量</label>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="selectCount(10)" class="mode-select-btn selected" id="btn-c-10">10 題</button>
+                        <button onclick="selectCount(20)" class="mode-select-btn" id="btn-c-20">20 題</button>
+                        <button onclick="selectCount(50)" class="mode-select-btn" id="btn-c-50">50 題</button>
+                    </div>
+                </div>
+
+                <div class="start-btn-group">
+                    <button class="btn-start btn-personal" onclick="startGame('personal')">📖 個人練習版<br><span style="font-size:0.9rem; font-weight:normal;">(手機直排・含解析)</span></button>
+                    <button class="btn-start btn-challenge" onclick="startGame('challenge')">⚡ 極速挑戰版<br><span style="font-size:0.9rem; font-weight:normal;">(手機直排・無解析)</span></button>
+                    <button class="btn-start btn-school" onclick="toSchoolScreen()">🏫 學校教學版<br><span style="font-size:0.9rem; font-weight:normal;">(點擊進入登入頁)</span></button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>遊戲製作: 阿吉 YORK</p>
+            <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="btn-mini">👉 追蹤 YORK (Threads)</a>
+        </div>
+    </div>
+
+    <div id="screen-school-login" class="screen">
+        <div class="start-content" style="width:100%; max-width:500px;">
+            <h1>🏫 學校教學模式</h1>
+            <p class="subtitle">團體競賽・成績結算</p>
+
+            <div class="card-box login-box">
+                <div id="school-error" class="error-msg"></div>
+
+                <div class="input-group">
+                    <label>🏫 學校名稱 (必填)</label>
+                    <input type="text" id="player-school" class="input-name" placeholder="例如：建國中學" maxlength="20">
+                </div>
+
+                <div class="input-group">
+                    <label>🚩 隊名 / 代表人 (必填)</label>
+                    <input type="text" id="player-team" class="input-name" placeholder="例如：第一小隊 / 王小明" maxlength="15">
+                </div>
+
+                <div style="text-align:left; margin-bottom:20px;">
+                    <label style="display:block; margin-bottom:8px; font-weight:900;">題目數量</label>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="selectCount(10)" class="mode-select-btn selected" id="sch-btn-c-10">10 題</button>
+                        <button onclick="selectCount(20)" class="mode-select-btn" id="sch-btn-c-20">20 題</button>
+                        <button onclick="selectCount(50)" class="mode-select-btn" id="sch-btn-c-50">50 題</button>
+                    </div>
+                </div>
+
+                <div class="start-btn-group">
+                    <button class="btn-start btn-personal" onclick="startGame('school')">🚀 開始測驗</button>
+                    <button class="btn-start btn-secondary" onclick="backToStart()">🔙 返回首頁</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-quiz" class="screen">
+        <div style="width: 100%; max-width: 1200px;">
+            <div style="display:flex; justify-content:space-between; color:#fff; font-weight:bold; margin-bottom:10px; padding:0 10px;">
+                <span id="quiz-player-name">Player</span>
+                <span id="quiz-progress">1 / 10</span>
+            </div>
+
+            <div class="quiz-layout">
+                <div class="question-side">
+                    <div class="card-box question-card">
+                        <span class="q-cat-label" id="q-cat">類別</span>
+                        <div id="q-text">題目載入中...</div>
+                    </div>
+                </div>
+                <div id="options-list" class="options-side"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback-modal">
+        <div class="feedback-box">
+            <div id="feedback-title"></div>
+            <div id="consequence-area"></div> 
+            <div id="feedback-content"></div>
+            <button class="next-q-btn" onclick="nextQuestion()">➡️ 下一題</button>
+        </div>
+    </div>
+
+    <div id="screen-result-good" class="screen">
+        <div class="result-layout">
+            <div class="result-left">
+                <div id="export-good" class="export-wrapper">
+                    <h1>🛡️ 全民防衛生存測驗</h1>
+                    <div class="card-box result-good" id="card-good" style="border-color:#000;">
+                        <div class="stamp-seal stamp-pass">合格認證</div>
+                        <div class="rank-badge">合格生存者</div>
+                        <div class="score-display" id="score-good">100</div>
+                        <h2 id="rank-good" style="margin:0; font-size: 1.8rem; color:#000;">傳奇指揮官</h2>
+                        
+                        <div style="font-size:1.2rem; margin:15px 0; font-weight: 900; color:#000; line-height:1.4;">
+                            <span id="school-good" style="display:none; font-size:1.1rem; opacity:0.8; margin-bottom:5px;"></span>
+                            <span id="name-good" style="border-bottom:3px solid #000; padding-bottom:3px; font-size:1.5rem;">XXX</span> 閣下
+                        </div>
+                        
+                        <p id="msg-good" style="font-size:1.1rem; margin:10px 0; font-weight: bold; opacity:0.8; color:#000;">
+                            你的防災意識極佳<br>是國家安全的基石！
+                        </p>
+
+                        <div style="border-top:2px solid #000; padding-top:10px; margin-top:15px; font-size:1rem; display:flex; justify-content:space-between; font-weight: bold;">
+                            <span>答對: <b id="correct-good">0</b></span>
+                            <span>耗時: <b id="time-good">0s</b></span>
+                        </div>
+                    </div>
+                    <div style="text-align: center; color: #fff; font-weight: bold; margin-top:10px; font-size:0.8rem;">遊戲製作: 阿吉 YORK</div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn-audio" style="background:#e6fffa; color:#006400; border-color:#006400;" onclick="fireworksEffect()">👏 給自己掌聲</button>
+                    <br>
+                    <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="btn-mini">👉 追蹤 YORK (Threads)</a>
+                </div>
+            </div>
+            
+            <div class="result-right">
+                
+                <button class="btn-action" onclick="downloadIGReport('export-good', '#C04000')">📸 下載 IG 戰報 (分享用)</button>
+                
+                <div id="cert-lock-section" class="cert-lock-ui">
+                    <div class="cert-lock-icon">🔒</div>
+                    <div class="cert-lock-text">
+                        認證代碼與神秘獎勵<br>已加密封存於數位憑證中
+                    </div>
+                    <button class="btn-action btn-secondary" style="font-size:1rem; margin-bottom:0;" onclick="downloadCertificate()">📥 下載認證憑證 (解鎖獎勵)</button>
+                </div>
+
+                <div id="qrcode"></div>
+
+                <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時:臺灣全民安全指引</a>
+                <button id="btn-csv-good" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下載答題明細 (.csv)</button>
+                <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
+                <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新測驗</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-result-bad" class="screen bad-font-style">
+        <div class="result-layout">
+            <div class="result-left">
+                <div id="export-bad" class="export-wrapper">
+                    <h1 class="bad-font-style">🛡️ 全民防卫生存测验</h1>
+                    <div class="card-box result-bad" id="card-bad" style="border-color:#000;">
+                        <div class="stamp-seal stamp-fail">統一功臣</div>
+                        <div style="font-size:1.1rem; letter-spacing:1px; margin-bottom:5px; font-weight: 900; color:#000;">生存智商指数</div>
+                        <div class="bad-score" id="score-bad" style="font-size:4rem; font-weight:900; color:#000;">40</div>
+                        <h2 style="margin:0; font-size: 1.8rem; color:#000;">高度嘉奖</h2>
+                        <div style="font-size:1.2rem; line-height:1.5; margin:15px 0; font-weight: 900; color:#000;">
+                            <span id="school-bad" style="display:none; font-size:1.1rem; opacity:0.8; margin-bottom:5px;"></span>
+                            <span id="name-bad" style="border-bottom:3px solid #000; padding-bottom:3px; font-size:1.5rem;">XXX</span> 同志：<br>
+                            感谢您对祖国统一大业的贡献！<br>
+                            您极度薄弱的防灾意识，<br>
+                            将为我军节省大量的攻台弹药。
+                        </div>
+                        <div style="font-size:0.9rem; margin-top:10px; font-weight: bold; color:#000;">战区接收工作委员会 致赠</div>
+                    </div>
+                    <div style="text-align: center; color: #fff; font-weight: bold; margin-top:10px; font-size:0.8rem;">遊戲製作: 阿吉 YORK</div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn-audio" style="background:#fee; color:#d00; border-color:#d00;" onclick="starsEffect()">🇨🇳 党的回馈</button>
+                    <br>
+                    <a href="https://www.threads.net/@yorkwwwwong" target="_blank" class="btn-mini">👉 追蹤 YORK (Threads)</a>
+                </div>
+            </div>
+
+            <div class="result-right">
+                <a href="https://reurl.cc/Zl1Rxl" target="_blank" class="btn-action btn-link">當危機來臨時：臺灣全民安全指引</a>
+                <button class="btn-action" onclick="downloadIGReport('export-bad', '#EE1C25')">📸 下载感谢状</button>
+                <button id="btn-csv-bad" class="btn-action btn-secondary" style="display:none;" onclick="downloadCSV()">📥 下载详细报表 (.csv)</button>
+                <button class="btn-action btn-secondary" onclick="showReview()">📖 知錯能改 (查看解析)</button>
+                <button class="btn-action btn-secondary" onclick="location.reload()">🔄 重新学习</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-review" class="screen" style="justify-content: flex-start; overflow-y: auto; padding-top: 20px;">
+        <h1>📖 知錯能改</h1>
+        <div id="review-list" class="review-list"></div>
+        <button class="btn-action btn-secondary" style="max-width:300px; margin-bottom: 30px;" onclick="backToResult()">🔙 返回結果</button>
+    </div>
+
+</div>
+
+<div id="toast" class="toast">圖片已下載！</div>
+
+<script>
+    // ★ 設定 1：題庫 CSV 連結
+    const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0Wkcims9kNqO1lPiyC-JJbDVMv1WkLoO7ch1_l1OfiW1QmEJiqvKSlcjmSfD9V5DCT76NrF4TdwGR/pub?output=csv"; 
+    const PRIZE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQG3B8wjswk3n5kDc6gcEIu1qebopvde5vPnw2AntvgrVIqE2mDclyrUgs6vHziTXavx9jTX0fUQq0R/pub?output=csv"; 
+
+    // ★ 設定 2：Google 表單回傳 ID
+    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdW4Pn6_2RY0Fjdm4VjtnRBLsyBOwCHXxN6Ydt8uCb9Htb-CQ/formResponse";
+    const ENTRY_ID_NAME = "entry.2026948411";
+    const ENTRY_ID_SCORE = "entry.613612201";
+    const ENTRY_ID_RANK = "entry.1097894505";
+    const ENTRY_ID_WRONG = "entry.2029704736";
+    const ENTRY_ID_TIME = "entry.603554255";
+    const ENTRY_ID_SCHOOL = "entry.1859416093"; 
+    const ENTRY_ID_CODE = "entry.1435004792"; 
+    const ENTRY_ID_PRIZE = "entry.242697873"; 
+
+    // ★ 設定 3：功能開關 (是否啟用憑證與獎勵系統)
+    const ENABLE_CERTIFICATE = true; 
+
+    let fullDB = []; 
+    let prizePool = []; 
+
+    let playerName = "";
+    let playerSchool = "";
+    let questionCount = 10;
+    let currentQuestions = [];
+    let wrongAnswers = [];
+    let allAnswers = [];
+    let currentIndex = 0;
+    let score = 0;
+    let startTime = 0;
+    let gameMode = 'personal';
+
+    window.onload = function() {
+        Promise.all([
+            fetch(GOOGLE_SHEET_CSV_URL).then(r => r.text()),
+            fetch(PRIZE_CSV_URL).then(r => r.text()).catch(e => null) 
+        ]).then(([questionsText, prizesText]) => {
+            fullDB = csvToJSON(questionsText);
+            if(prizesText) parsePrizes(prizesText);
+            
+            document.getElementById('loading-overlay').style.display = 'none';
+            console.log("題庫載入:", fullDB.length, "獎品數:", prizePool.length);
+        }).catch(err => {
+            console.error("載入失敗:", err);
+            document.getElementById('loading-overlay').innerHTML = "<h2>⚠️ 連線失敗</h2><p>請檢查網路設定</p>";
+        });
+    };
+
+    function csvToJSON(csv) {
+        const lines = csv.split(/\r\n|\n/);
+        const result = [];
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i]) continue;
+            const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g); 
+            const currentline = matches ? matches.map(m => m.replace(/^"|"$/g, '')) : lines[i].split(",");
+            if (currentline.length < 3) continue;
+
+            let wrongs = [];
+            if(currentline[4]) wrongs.push({ t: currentline[4], bad: currentline[5] || "" });
+            if(currentline[6]) wrongs.push({ t: currentline[6], bad: currentline[7] || "" });
+            if(currentline[8]) wrongs.push({ t: currentline[8], bad: currentline[9] || "" });
+
+            result.push({
+                c: currentline[0] || "通用",
+                q: currentline[1],
+                a: currentline[2],
+                desc: currentline[3] || "",
+                w: wrongs
+            });
+        }
+        return result;
+    }
+
+    function parsePrizes(csv) {
+        const lines = csv.split(/\r\n|\n/);
+        prizePool = [];
+        for(let i=1; i<lines.length; i++) {
+            const row = lines[i].split(",");
+            if(row.length >= 2) {
+                let name = row[0].trim();
+                let weight = parseInt(row[1].trim()) || 0;
+                if(name && weight > 0) {
+                    prizePool.push({ name: name, weight: weight });
+                }
+            }
+        }
+    }
+
+    function drawPrize() {
+        if(!prizePool || prizePool.length === 0) return null;
+        let totalWeight = prizePool.reduce((sum, p) => sum + p.weight, 0);
+        let randomNum = Math.random() * totalWeight;
+        let weightSum = 0;
+        for (let p of prizePool) {
+            weightSum += p.weight;
+            if (randomNum <= weightSum) { return p.name; }
+        }
+        return prizePool[prizePool.length - 1].name;
+    }
+
+    function selectCount(n) {
+        questionCount = n;
+        document.querySelectorAll('.mode-select-btn').forEach(b => b.classList.remove('selected'));
+        if(document.getElementById(`btn-c-${n}`)) document.getElementById(`btn-c-${n}`).classList.add('selected');
+        if(document.getElementById(`sch-btn-c-${n}`)) document.getElementById(`sch-btn-c-${n}`).classList.add('selected');
+    }
+
+    function toSchoolScreen() { showScreen('screen-school-login'); }
+    function backToStart() { showScreen('screen-start'); }
+
+    function startGame(mode) {
+        if(fullDB.length === 0) { alert("資料載入中，請稍後..."); return; }
+
+        let inputName, inputSchool, errorMsg;
+        gameMode = mode;
+
+        if (mode === 'school') {
+            inputName = document.getElementById('player-team');
+            inputSchool = document.getElementById('player-school');
+            errorMsg = document.getElementById('school-error');
+            if (!inputSchool.value.trim() || !inputName.value.trim()) { 
+                showError(errorMsg, "請填寫所有欄位！"); return; 
+            }
+            playerSchool = inputSchool.value.trim();
+            document.body.classList.add('mode-school');
+        } else {
+            inputName = document.getElementById('player-name');
+            errorMsg = document.getElementById('start-error');
+            if (!inputName.value.trim()) { showError(errorMsg, "請輸入您的名字！"); return; }
+            playerSchool = ""; 
+            document.body.classList.remove('mode-school');
+        }
+        
+        playerName = inputName.value.trim();
+        document.getElementById('quiz-player-name').innerText = playerName;
+        if(errorMsg) errorMsg.style.display = 'none';
+
+        let pool = JSON.parse(JSON.stringify(fullDB));
+        while(pool.length < questionCount) pool = pool.concat(fullDB); 
+        currentQuestions = pool.sort(() => Math.random() - 0.5).slice(0, questionCount);
+        
+        wrongAnswers = [];
+        allAnswers = [];
+        currentIndex = 0;
+        score = 0;
+        startTime = Date.now();
+
+        showScreen('screen-quiz');
+        loadQuestion();
+    }
+
+    function showError(el, msg) {
+        el.innerText = msg; el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 2000);
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        window.scrollTo(0,0); 
+    }
+
+    function loadQuestion() {
+        document.getElementById('feedback-modal').style.display = 'none';
+        const qData = currentQuestions[currentIndex];
+        document.getElementById('quiz-progress').innerText = `${currentIndex + 1} / ${questionCount}`;
+        document.getElementById('q-cat').innerText = qData.c;
+        document.getElementById('q-text').innerText = qData.q;
+
+        let opts = [{ t: qData.a, correct: true, bad: null }];
+        if (qData.w) {
+            let wrongs = [...qData.w];
+            wrongs.sort(() => Math.random() - 0.5).slice(0, 3).forEach(w => {
+                opts.push({ t: w.t, correct: false, bad: w.bad });
+            });
+        }
+        opts.sort(() => Math.random() - 0.5);
+
+        const list = document.getElementById('options-list');
+        list.innerHTML = "";
+        opts.forEach(opt => {
+            let btn = document.createElement('div');
+            btn.className = 'option-btn';
+            btn.innerText = opt.t;
+            btn.onclick = () => checkAnswer(btn, opt.correct, qData, opt.bad);
+            list.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(btn, isCorrect, qData, specificBad) {
+        const all = document.querySelectorAll('.option-btn');
+        all.forEach(b => b.style.pointerEvents = 'none');
+        allAnswers.push({ q: qData.q, u: btn.innerText, a: qData.a, c: isCorrect ? 'O' : 'X', bad: specificBad });
+
+        if(isCorrect) {
+            btn.classList.add('correct');
+            score++;
+            if(gameMode === 'challenge') { setTimeout(nextQuestion, 500); } 
+            else { setTimeout(() => showFeedback(true, qData, null), 500); }
+        } else {
+            btn.classList.add('wrong');
+            wrongAnswers.push({ ...qData, specificBad: specificBad }); 
+            all.forEach(b => { if(b.innerText === qData.a) b.classList.add('correct'); });
+            if(gameMode === 'challenge') { setTimeout(nextQuestion, 1000); } 
+            else { setTimeout(() => showFeedback(false, qData, specificBad), 800); }
+        }
+    }
+
+    function showFeedback(isCorrect, qData, specificBad) {
+        const modal = document.getElementById('feedback-modal');
+        const title = document.getElementById('feedback-title');
+        const content = document.getElementById('feedback-content');
+        const consequenceArea = document.getElementById('consequence-area');
+        consequenceArea.innerHTML = "";
+        consequenceArea.style.display = 'none';
+
+        if (isCorrect) {
+            title.innerHTML = "⭕ 答對了！"; title.style.color = "#006400"; 
+        } else {
+            title.innerHTML = "❌ 答錯了！"; title.style.color = "#8B0000"; 
+            if(specificBad) {
+                consequenceArea.style.display = 'block';
+                consequenceArea.innerHTML = `<div class="consequence-box">${specificBad}</div>`;
+            }
+        }
+        content.innerHTML = `<strong style="color:#000; font-size:1.2rem; display:block; margin-bottom:15px;">✔ 正解：${qData.a}</strong>${qData.desc}`;
+        modal.style.display = 'flex';
+    }
+
+    function nextQuestion() {
+        currentIndex++;
+        if(currentIndex < questionCount) { loadQuestion(); } else { endGame(); }
+    }
+
+    function generateSurvivorCode() {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
+        const SECRET_SALT = 9527; 
+        let code = "";
+        let sum = 0;
+        for (let i = 0; i < 5; i++) {
+            let index = Math.floor(Math.random() * chars.length);
+            code += chars[index];
+            sum += index * (i + 1); 
+        }
+        sum += SECRET_SALT;
+        let checkIndex = sum % chars.length;
+        code += chars[checkIndex];
+        return code;
+    }
+
+    function endGame() {
+        document.getElementById('feedback-modal').style.display = 'none';
+        let finalScore = Math.round((score / questionCount) * 100);
+        let timeUsed = Math.floor((Date.now() - startTime) / 1000);
+        let survivorCode = "";
+        let wonPrize = "";
+
+        if(gameMode === 'school') {
+            document.getElementById('btn-csv-good').style.display = 'block';
+            document.getElementById('btn-csv-bad').style.display = 'block';
+        } else {
+            document.getElementById('btn-csv-good').style.display = 'none';
+            document.getElementById('btn-csv-bad').style.display = 'none';
+        }
+
+        if (finalScore >= 60) {
+            survivorCode = generateSurvivorCode();
+            wonPrize = drawPrize(); 
+
+            showScreen('screen-result-good');
+            document.getElementById('score-good').innerText = finalScore;
+            document.getElementById('correct-good').innerText = score;
+            document.getElementById('time-good').innerText = timeUsed + "s";
+            document.getElementById('name-good').innerText = playerName;
+            
+            if(gameMode === 'school') { 
+                document.getElementById('school-good').style.display = 'block'; 
+                document.getElementById('school-good').innerText = playerSchool; 
+            }
+
+            // ★ 關鍵修復：強制重新生成 QR Code
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = ""; 
+            new QRCode(qrContainer, {
+                text: survivorCode, 
+                width: 200, height: 200,
+                colorDark : "#000000", colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            if(ENABLE_CERTIFICATE) {
+                document.getElementById('cert-lock-section').style.display = 'block';
+                
+                document.getElementById('cert-render-name').innerText = playerName;
+                document.getElementById('cert-render-code').innerText = survivorCode;
+                
+                if (wonPrize) {
+                    document.getElementById('cert-render-reward-text').innerText = wonPrize;
+                    document.getElementById('cert-render-reward-box').style.display = 'block';
+                } else {
+                    document.getElementById('cert-render-reward-box').style.display = 'none';
+                }
+            } else {
+                document.getElementById('cert-lock-section').style.display = 'none';
+            }
+
+        } else {
+            document.body.classList.add('bad-end'); 
+            showScreen('screen-result-bad');
+            document.getElementById('score-bad').innerText = finalScore;
+            document.getElementById('name-bad').innerText = playerName;
+            if(gameMode === 'school') { 
+                document.getElementById('school-bad').style.display = 'block'; 
+                document.getElementById('school-bad').innerText = playerSchool; 
+            }
+        }
+
+        sendData(playerName, finalScore, timeUsed, survivorCode, wonPrize, wrongAnswers);
+    }
+
+    function sendData(name, score, time, code, prize, wrongList) {
+        const formData = new FormData();
+        formData.append(ENTRY_ID_SCHOOL, playerSchool);
+        formData.append(ENTRY_ID_NAME, name);
+        formData.append(ENTRY_ID_SCORE, score);
+        formData.append(ENTRY_ID_TIME, time);
+        if(code) formData.append(ENTRY_ID_CODE, code);
+        if(prize) formData.append(ENTRY_ID_PRIZE, prize);
+        let wrongText = wrongList.length > 0 ? wrongList.map(w => w.q).join(" | ") : "無 (全對)";
+        formData.append(ENTRY_ID_WRONG, wrongText);
+        fetch(GOOGLE_FORM_URL, { method: "POST", body: formData, mode: "no-cors" }).catch(err => { console.error("Data Error", err); });
+    }
+
+    function downloadCSV() {
+        let csvContent = "\uFEFF"; 
+        csvContent += `學校,姓名/隊名,分數,${playerSchool},${playerName},${Math.round((score / questionCount) * 100)}\n\n`;
+        csvContent += "題目,學生選擇,正確答案,結果\n";
+        allAnswers.forEach(row => {
+            let q = `"${row.q.replace(/"/g, '""')}"`;
+            let u = `"${row.u.replace(/"/g, '""')}"`;
+            let a = `"${row.a.replace(/"/g, '""')}"`;
+            csvContent += `${q},${u},${a},${row.c}\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `生存測驗明細_${playerSchool}_${playerName}.csv`;
+        link.click();
+    }
+
+    function showReview() {
+        if(wrongAnswers.length === 0) { alert("🎉 完美全對！無需複習！"); return; }
+        const list = document.getElementById('review-list'); list.innerHTML = "";
+        wrongAnswers.forEach((item, index) => {
+            let badHtml = item.specificBad ? `<div style="color:#d00; margin-top:5px; font-weight:bold;">${item.specificBad}</div>` : "";
+            list.innerHTML += `<div class="review-item"><span class="q-cat-label" style="font-size:0.8rem; margin-bottom:5px;">${item.c}</span><div style="font-size:1.1rem; font-weight:900; margin-bottom:5px;">${index + 1}. ${item.q}</div><div class="review-ans">✔ 正解：${item.a}</div>${badHtml}<div class="review-desc">${item.desc}</div></div>`;
+        });
+        showScreen('screen-review'); window.scrollTo(0,0);
+    }
+
+    function backToResult() {
+        if(document.body.classList.contains('bad-end')) { showScreen('screen-result-bad'); } 
+        else { showScreen('screen-result-good'); }
+    }
+
+    // ★ 下載 IG 戰報
+    function downloadIGReport(elementId, bgColor) {
+        const element = document.getElementById(elementId);
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "🔄 圖片生成中..."; btn.disabled = true;
+
+        const originalWidth = element.style.width;
+        element.style.width = "600px"; 
+
+        html2canvas(element, {
+            scale: 2, useCORS: true, backgroundColor: bgColor, windowWidth: 1200 
+        }).then(canvas => {
+            element.style.width = originalWidth;
+            const link = document.createElement('a');
+            link.download = `生存戰報_${playerName}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            btn.innerText = originalText; btn.disabled = false;
+            const toast = document.getElementById('toast');
+            if(toast) { toast.style.display = 'block'; setTimeout(() => toast.style.display = 'none', 3000); }
+        }).catch(err => {
+            console.error("生成失敗:", err);
+            element.style.width = originalWidth;
+            btn.innerText = "❌ 失敗"; setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+        });
+    }
+
+    // ★ 下載數位憑證 (修復 QR Code 空白問題)
+    function downloadCertificate() {
+        const certElement = document.getElementById('hidden-cert-template');
+        const btn = event.target;
+        const originalText = btn.innerText;
+        
+        btn.innerText = "🔓 解鎖生成中..."; btn.disabled = true;
+
+        // ★ 關鍵修復：將隱藏的 QR Code 轉為圖片，再塞入憑證中
+        const visibleCanvas = document.querySelector('#qrcode canvas');
+        const visibleImg = document.querySelector('#qrcode img');
+        const targetImg = document.getElementById('cert-render-qr-img');
+        
+        if(visibleCanvas) {
+            targetImg.src = visibleCanvas.toDataURL();
+        } else if (visibleImg) {
+            targetImg.src = visibleImg.src;
+        }
+
+        // 給一點時間讓圖片載入
+        setTimeout(() => {
+            html2canvas(certElement, {
+                scale: 2, useCORS: true, backgroundColor: "#f8f9fa", windowWidth: 800
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `生存認證憑證_${playerName}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                btn.innerText = originalText; btn.disabled = false;
+                
+                const toast = document.getElementById('toast');
+                if(toast) { 
+                    toast.innerText = "憑證已解鎖下載！";
+                    toast.style.display = 'block'; 
+                    setTimeout(() => toast.style.display = 'none', 3000); 
+                }
+            }).catch(err => {
+                console.error("憑證生成失敗:", err);
+                btn.innerText = "❌ 失敗"; setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+            });
+        }, 100);
+    }
+
+    function fireworksEffect() {
+        var duration = 3000;
+        var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) { return clearInterval(interval); }
+            var particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+
+    function starsEffect() {
+        var end = Date.now() + 2000;
+        (function frame() {
+            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, shapes: ['star'], colors: ['#FFFF00', '#FF0000'] });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, shapes: ['star'], colors: ['#FFFF00', '#FF0000'] });
+            if (Date.now() < end) { requestAnimationFrame(frame); }
+        }());
+    }
+</script>
+
+</body>
+</html>
