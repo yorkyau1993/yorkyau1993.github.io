@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS 顯示畫面 (Display V4 - VO模式)</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; }
+        
+        /* 背景層 (影片/圖片) */
+        #bg-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .bg-media { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s; }
+        .bg-visible { opacity: 1; }
+
+        /* 前景層 (文字) */
+        #text-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 50px; box-sizing: border-box;
+        }
+
+        /* 文字樣式 (加強陰影，確保在影片上清楚) */
+        .slide-text { 
+            font-size: 70px; font-weight: bold; color: #fff; 
+            text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            background-color: rgba(0,0,0,0.4); /* 半透明黑底，增加可讀性 */
+            padding: 20px 40px; border-radius: 10px;
+            line-height: 1.4;
+        }
+
+        .slide-title { 
+            font-size: 90px; font-weight: 900; color: #00ffcc; 
+            text-shadow: 4px 4px 0 #000;
+            border-bottom: 5px solid #00ffcc; padding-bottom: 20px; 
+            background-color: rgba(0,0,0,0.6);
+            padding: 20px 60px;
+        }
+        
+        /* 轉場動畫 */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    
+    <div id="bg-layer">
+        <video id="bg-video" class="bg-media" muted loop playsinline></video>
+        <img id="bg-image" class="bg-media" style="display:none;">
+    </div>
+
+    <div id="text-layer">
+        <div class="slide-text" style="font-size:40px; color:#aaa;">等待指令...</div>
+    </div>
+
+    <script>
+        let videoInterval = null;
+        let currentVideoSrc = ""; // 紀錄當前影片，避免重複載入
+
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'obs_prompter_update') {
+                const data = JSON.parse(event.newValue);
+                render(data);
+            }
+        });
+
+        // 初始化
+        const savedData = localStorage.getItem('obs_prompter_update');
+        if (savedData) render(JSON.parse(savedData));
+
+        function render(slide) {
+            if (!slide) return;
+
+            const textContainer = document.getElementById('text-layer');
+            const videoEl = document.getElementById('bg-video');
+            const imageEl = document.getElementById('bg-image');
+
+            // 1. 處理背景 (Background)
+            if (slide.bgType === 'video') {
+                imageEl.style.display = 'none';
+                videoEl.style.display = 'block';
+                
+                // 只有當影片網址改變時才重新載入，避免閃爍
+                if (currentVideoSrc !== slide.bgContent) {
+                    videoEl.src = slide.bgContent;
+                    currentVideoSrc = slide.bgContent;
+                    videoEl.load();
+                }
+
+                // 設定播放與循環
+                handleVideoLoop(videoEl, parseFloat(slide.inPoint), parseFloat(slide.outPoint));
+                videoEl.classList.add('bg-visible');
+
+            } else if (slide.bgType === 'image') {
+                videoEl.style.display = 'none';
+                videoEl.classList.remove('bg-visible');
+                // 停止影片計時
+                if (videoInterval) clearInterval(videoInterval);
+                currentVideoSrc = "";
+
+                imageEl.src = slide.bgContent;
+                imageEl.style.display = 'block';
+                imageEl.classList.add('bg-visible');
+            } else {
+                // 無背景 (全黑)
+                videoEl.classList.remove('bg-visible');
+                imageEl.classList.remove('bg-visible');
+                if (videoInterval) clearInterval(videoInterval);
+                currentVideoSrc = "";
+                
+                // 延遲一點點清除 src 以讓淡出動畫播完 (可選)
+                setTimeout(() => { if(!slide.bgType) videoEl.pause(); }, 500);
+            }
+
+            // 2. 處理文字 (Foreground)
+            let html = '';
+            if (slide.type === 'title') {
+                html = `<div class="slide-title fade-in">${slide.content}</div>`;
+            } else if (slide.type === 'text') {
+                html = `<div class="slide-text fade-in">${slide.content}</div>`;
+            }
+            // 如果是純圖片 slide (舊版語法)，背景已經處理了，文字層留空
+            textContainer.innerHTML = html;
+        }
+
+        function handleVideoLoop(video, inPoint, outPoint) {
+            // 清除舊的 Loop 檢查
+            if (videoInterval) clearInterval(videoInterval);
+            
+            inPoint = inPoint || 0;
+            outPoint = outPoint || 0;
+
+            // 如果當前時間差太多，或是剛載入，就跳轉
+            if (Math.abs(video.currentTime - inPoint) > 1 && video.currentTime < inPoint) {
+                video.currentTime = inPoint;
+            }
+            
+            video.play().catch(e => console.log("Autoplay blocked:", e));
+
+            // 如果有設定 Out 點
+            if (outPoint > inPoint) {
+                videoInterval = setInterval(() => {
+                    if (video.currentTime >= outPoint) {
+                        video.currentTime = inPoint;
+                        video.play();
+                    }
+                }, 50);
+            }
+        }
+    </script>
+</body>
+</html>

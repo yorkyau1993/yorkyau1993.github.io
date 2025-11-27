@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS 控制器 (VO新聞模式)</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f0f0; padding: 20px; display: flex; gap: 20px; height: 90vh; }
+        
+        .panel-left { flex: 1.2; display: flex; flex-direction: column; }
+        
+        .toolbar { background: #e9ecef; padding: 10px; border-radius: 5px 5px 0 0; border: 1px solid #ccc; border-bottom: none; display: flex; gap: 8px; flex-wrap: wrap; }
+        .tool-btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1); }
+        .tool-btn:hover { transform: translateY(-1px); opacity: 0.9; }
+
+        .btn-title { background: #00ffcc; color: #004d40; }
+        .btn-img { background: #ff9900; color: #4e3400; }
+        .btn-vid-block { background: #d63384; color: white; } /* 紫紅色 VO 按鈕 */
+        .btn-search { background: #6c757d; color: white; }
+        .btn-clear { background: #dc3545; color: white; margin-left: auto; }
+
+        textarea { flex: 1; padding: 15px; font-size: 16px; border: 1px solid #ccc; border-radius: 0 0 5px 5px; resize: none; margin-bottom: 10px; font-family: monospace; white-space: pre; overflow-wrap: normal; overflow-x: scroll; line-height: 1.5; }
+        
+        .action-area { display: flex; gap: 10px; }
+        .btn-big { padding: 12px; cursor: pointer; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; flex: 1; }
+        .btn-load { background: #28a745; color: white; }
+        .btn-wipe { background: #333; color: white; flex: 0.3;}
+
+        .panel-right { flex: 0.8; display: flex; flex-direction: column; background: #333; color: white; padding: 20px; border-radius: 10px; }
+        .preview-box { background: #000; border: 2px solid #555; height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; text-align: center; padding: 10px; overflow: hidden; flex-direction: column; position: relative; }
+        
+        /* 預覽背景 */
+        .preview-bg { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.4; z-index: 0; }
+        .current-text { color: #fff; font-size: 24px; font-weight: bold; line-height: 1.4; z-index: 1; text-shadow: 2px 2px 0 #000; position: relative;}
+        
+        .tag { padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-bottom: 5px; display: inline-block;}
+        .tag-vo { background: #d63384; color: white; }
+
+        .controls { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: auto; }
+        .btn-nav { background: #007acc; color: white; padding: 20px; font-size: 20px; border: none; cursor: pointer; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="panel-left">
+        <h3>新聞稿編輯 (VO 背景模式)</h3>
+        
+        <div class="toolbar">
+            <button class="tool-btn btn-title" onclick="insertTitle()">📝 標題</button>
+            <button class="tool-btn btn-vid-block" onclick="insertVideoBlock()">🎬 影片背景區塊 (VO)</button>
+            <button class="tool-btn btn-img" onclick="insertImage()">🖼️ 圖片(全螢幕)</button>
+            <button class="tool-btn btn-search" onclick="openGoogleImages()">🔍 找圖</button>
+            <button class="tool-btn btn-clear" onclick="clearEditor()">❌ 清空</button>
+        </div>
+
+        <textarea id="script-input" placeholder="輸入文字... 或選取文字後點擊「影片背景區塊」...">
+[T:晚間新聞快報]
+各位觀眾大家好，歡迎收看。
+[VID IN=5 OUT=15 URL=https://www.w3schools.com/html/mov_bbb.mp4]
+現在我們看到的是現場畫面。
+透過這個畫面我們可以了解...
+現場氣氛非常熱鬧。
+[/VID]
+報導結束，謝謝收看。
+        </textarea>
+        
+        <div class="action-area">
+            <button class="btn-big btn-load" onclick="initScript()">🚀 重置並開始 (Load)</button>
+            <button class="btn-big btn-wipe" onclick="clearDisplay()">⬛ 黑屏</button>
+        </div>
+    </div>
+
+    <div class="panel-right">
+        <div style="color:#aaa; font-size:12px; margin-bottom:5px;">🔴 正在顯示 (ON AIR)</div>
+        <div class="preview-box" id="preview-box-current">
+            <div id="preview-current" class="current-text">---</div>
+        </div>
+
+        <div style="color:#aaa; font-size:12px; margin-bottom:5px;">⏭️ 下一句</div>
+        <div class="preview-box" style="height: 100px; background: #222;">
+            <div id="preview-next" class="current-text" style="font-size:16px;">---</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-nav" onclick="prevSlide()">⬅️ 上一句</button>
+            <button class="btn-nav" onclick="nextSlide()">下一句 (Space)</button>
+        </div>
+        <div style="text-align:right; color:#888; font-size:12px; margin-top:10px;" id="slide-status">0 / 0</div>
+    </div>
+
+    <script>
+        let slides = [];
+        let currentIndex = -1;
+        const textArea = document.getElementById('script-input');
+
+        // --- 按鈕功能 ---
+        function insertTitle() {
+            const val = prompt("輸入標題：");
+            if (val) insertAtCursor(`\n[T:${val}]\n`);
+        }
+        function insertImage() {
+            const val = prompt("輸入全螢幕圖片網址：");
+            if (val) insertAtCursor(`\n[IMG:${val}]\n`);
+        }
+        
+        // 插入影片包覆區塊
+        function insertVideoBlock() {
+            const url = prompt("輸入背景影片網址 (mp4)：");
+            if (!url) return;
+            const inPoint = prompt("開始秒數 (IN)：", "0");
+            const outPoint = prompt("結束秒數 (OUT)：", "10");
+
+            // 檢查有沒有選取文字
+            const start = textArea.selectionStart;
+            const end = textArea.selectionEnd;
+            const selectedText = textArea.value.substring(start, end);
+
+            const openTag = `\n[VID IN=${inPoint} OUT=${outPoint} URL=${url}]\n`;
+            const closeTag = `\n[/VID]\n`;
+
+            if (selectedText.trim().length > 0) {
+                // 包住選取的文字
+                const replacement = openTag + selectedText + closeTag;
+                textArea.setRangeText(replacement);
+            } else {
+                // 插入空區塊
+                insertAtCursor(`${openTag}在這裡輸入要有背景影片的文字...\n第二句...\n${closeTag}`);
+            }
+        }
+
+        function openGoogleImages() {
+            const val = prompt("搜尋關鍵字：", "新聞");
+            if (val) window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(val)}`, '_blank');
+        }
+        function clearEditor() { if(confirm("清空？")) textArea.value = ""; }
+        
+        function insertAtCursor(text) {
+            const start = textArea.selectionStart;
+            const end = textArea.selectionEnd;
+            textArea.value = textArea.value.substring(0, start) + text + textArea.value.substring(end);
+            textArea.focus();
+        }
+
+        // --- 解析邏輯 (支援區塊) ---
+        function initScript() {
+            parseScript(textArea.value);
+            if (slides.length > 0) {
+                currentIndex = 0;
+                updateState();
+            }
+        }
+
+        function parseScript(text) {
+            slides = [];
+            // 1. 先把區塊切出來
+            // 使用正則表達式尋找 [VID ...] ... [/VID]
+            // 注意：JS的正則不支援 dotAll (跨行)，要用 [\s\S]
+            const blockRegex = /\[VID\s+IN=([\d\.]+)\s+OUT=([\d\.]+)\s+URL=(.*?)\]([\s\S]*?)\[\/VID\]/gi;
+            
+            // 我們使用一個技巧：先處理區塊，把區塊替換成特殊的 Placeholders，
+            // 解析完普通行之後，再展開 Placeholders。
+            // 但為了簡單與順序正確，我們逐行掃描比較穩。
+
+            const lines = text.split('\n');
+            let currentBgVideo = null; // 當前是否在影片區塊內
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+
+                // 檢查是否是區塊開始 [VID ...]
+                const startMatch = line.match(/^\[VID\s+IN=([\d\.]+)\s+OUT=([\d\.]+)\s+URL=(.*?)\]/i);
+                if (startMatch) {
+                    currentBgVideo = {
+                        in: startMatch[1],
+                        out: startMatch[2],
+                        url: startMatch[3]
+                    };
+                    return; // 這一行是標籤，跳過
+                }
+
+                // 檢查是否是區塊結束 [/VID]
+                if (line.match(/^\[\/VID\]/i)) {
+                    currentBgVideo = null;
+                    return; // 這一行是標籤，跳過
+                }
+
+                // 處理內容
+                let slide = {};
+
+                if (line.startsWith('[T:') && line.endsWith(']')) {
+                    slide = { type: 'title', content: line.substring(3, line.length - 1) };
+                } else if (line.startsWith('[IMG:') && line.endsWith(']')) {
+                    // 全螢幕圖片
+                    slide = { type: 'text', content: '', bgType: 'image', bgContent: line.substring(5, line.length - 1) };
+                } else {
+                    // 普通文字
+                    slide = { type: 'text', content: line };
+                }
+
+                // 如果當前在影片區塊內，加上背景屬性
+                if (currentBgVideo && slide.type === 'text') {
+                    slide.bgType = 'video';
+                    slide.bgContent = currentBgVideo.url;
+                    slide.inPoint = currentBgVideo.in;
+                    slide.outPoint = currentBgVideo.out;
+                }
+
+                slides.push(slide);
+            });
+        }
+
+        // --- 控制邏輯 (同前) ---
+        function nextSlide() {
+            if (currentIndex < slides.length - 1) { currentIndex++; updateState(); }
+        }
+        function prevSlide() {
+            if (currentIndex > 0) { currentIndex--; updateState(); }
+        }
+        function clearDisplay() {
+            sendToDisplay({ type: 'text', content: '' });
+            document.getElementById('preview-current').innerText = '';
+        }
+
+        function updateState() {
+            const current = slides[currentIndex];
+            const next = slides[currentIndex + 1];
+            sendToDisplay(current);
+            renderPreview('preview-current', current, 'preview-box-current');
+            renderPreview('preview-next', next);
+            document.getElementById('slide-status').innerText = `${currentIndex + 1} / ${slides.length}`;
+        }
+
+        function renderPreview(elId, slide, boxId = null) {
+            const el = document.getElementById(elId);
+            if (!slide) { el.innerHTML = '(結束)'; return; }
+
+            // 更新預覽盒子的背景
+            if (boxId) {
+                const box = document.getElementById(boxId);
+                // 清除舊背景
+                const oldBg = box.querySelector('.preview-bg');
+                if(oldBg) oldBg.remove();
+
+                if (slide.bgType === 'video' || slide.bgType === 'image') {
+                    const bg = document.createElement(slide.bgType === 'video' ? 'video' : 'img');
+                    bg.src = slide.bgContent;
+                    bg.className = 'preview-bg';
+                    if(slide.bgType === 'video') { bg.muted = true; bg.currentTime = slide.inPoint; }
+                    box.prepend(bg); // 插在最前面
+                }
+            }
+
+            // 更新文字
+            let html = '';
+            if (slide.type === 'title') {
+                html = `<span class="tag" style="background:#00ffcc;color:black;">標題</span><br>${slide.content}`;
+            } else if (slide.type === 'text') {
+                if (slide.bgType === 'video') {
+                     html = `<span class="tag tag-vo">VO模式</span> <span style="font-size:10px">IN:${slide.inPoint} OUT:${slide.outPoint}</span><br>${slide.content}`;
+                } else {
+                     html = slide.content;
+                }
+            }
+            el.innerHTML = html;
+        }
+
+        function sendToDisplay(data) {
+            localStorage.setItem('obs_prompter_update', JSON.stringify(data));
+            localStorage.setItem('obs_prompter_timestamp', Date.now());
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement !== textArea || e.ctrlKey) {
+                if (e.code === 'Space') { e.preventDefault(); nextSlide(); }
+                else if (e.code === 'ArrowLeft') prevSlide();
+                else if (e.code === 'ArrowRight') nextSlide();
+            }
+        });
+    </script>
+</body>
+</html>
