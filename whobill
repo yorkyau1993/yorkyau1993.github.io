@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase 雲端點餐系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        /* 樣式與之前保持一致，簡潔為主 */
+        body { font-family: '微軟正黑體', sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 60px; }
+        header { background: #3ecf8e; color: #1c1c1c; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { margin: 0; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+        
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 2px; }
+        .btn-primary { background: #3ecf8e; color: #1c1c1c; } /* Supabase Green */
+        .btn-danger { background: #ff4d4f; color: white; }
+        .btn-warning { background: #faad14; color: white; }
+        .btn-dark { background: #1c1c1c; color: white; }
+
+        .view-section { display: none; }
+        .active { display: block; }
+        .grid-box { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; width: calc(100% - 24px); }
+        .status-badge { padding: 4px 8px; border-radius: 4px; color: white; font-size: 0.8em; }
+        
+        /* 購物車浮動條 */
+        #cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 99; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 id="pageTitle">系統載入中...</h2>
+</header>
+
+<div class="container">
+
+    <div id="view-customer" class="view-section">
+        <div id="menu-area"></div>
+        <div id="customer-orders-list" class="card" style="margin-top:20px;">
+            <h3>📋 我的點餐紀錄</h3>
+            <div id="my-order-items"></div>
+        </div>
+        <div id="cart-bar">
+            <div>總計 <b style="color:#e02e2e; font-size:1.2em;">$<span id="cart-total">0</span></b></div>
+            <button class="btn btn-primary" onclick="submitOrder()">送出訂單 (<span id="cart-count">0</span>)</button>
+        </div>
+    </div>
+
+    <div id="view-kitchen" class="view-section">
+        <div class="grid-box" id="kitchen-orders"></div>
+    </div>
+
+    <div id="view-admin" class="view-section">
+        <div class="card">
+            <h3>🪑 桌況與 QR Code</h3>
+            <div class="grid-box" id="admin-tables-list"></div>
+            <div id="qrcode-preview" style="text-align:center; margin-top:20px; padding:20px; background:#eee; display:none;">
+                <div id="qrcode" style="display:inline-block; border: 5px solid white;"></div>
+                <p id="qr-text"></p>
+            </div>
+        </div>
+        <div class="card">
+            <h3>🍽️ 新增菜單</h3>
+            <input type="text" id="dishName" placeholder="菜名">
+            <input type="number" id="dishPrice" placeholder="價格">
+            <select id="dishCat"><option>主餐</option><option>飲料</option><option>點心</option></select>
+            <button class="btn btn-dark" style="width:100%" onclick="addDish()">新增</button>
+            <div id="admin-menu-list" style="margin-top:10px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ⚠️ 請填入你的 Supabase 設定
+    const SUPABASE_URL = 'https://mcuamfcyxdafoxbcagbh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_XP9zaSQFrF9DLDa9xJgbgA_uhJc-lbM';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 狀態變數
+    let cart = [];
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const tableId = params.get('table');
+    const tableCode = params.get('code');
+
+    // === 程式入口 ===
+    async function init() {
+        if (mode === 'admin') {
+            setupAdmin();
+        } else if (mode === 'kitchen') {
+            setupKitchen();
+        } else {
+            await checkSecurity(); // 顧客先檢查安全
+        }
+    }
+
+    // ===================================
+    // 🛡️ 顧客端邏輯 (含 Security Check)
+    // ===================================
+    async function checkSecurity() {
+        if (!tableId || !tableCode) return showBlocked("請掃描桌上最新的 QR Code");
+
+        // 1. 查詢該桌狀態 (Supabase select)
+        const { data, error } = await supabase
+            .from('tables')
+            .select('*')
+            .eq('id', tableId)
+            .single();
+
+        if (error || !data) return showBlocked("無效的桌號");
+        if (data.code !== tableCode) return showBlocked("此 QR Code 已過期 (安全驗證失敗)");
+        if (data.status !== 'open') return showBlocked("此桌尚未開桌，請洽服務人員");
+
+        setupCustomer();
+    }
+
+    function showBlocked(msg) {
+        document.body.innerHTML = `<h2 style="text-align:center; padding:50px; color:gray;">🚫 ${msg}</h2>`;
+    }
+
+    function setupCustomer() {
+        document.getElementById('view-customer').classList.add('active');
+        document.getElementById('pageTitle').innerText = `桌號 ${tableId} 點餐中`;
+
+        // 1. 載入菜單 (Realtime 監聽)
+        loadMenu((menu) => renderMenu(menu, 'customer'));
+        
+        // 2. 監聽自己的訂單狀態 (Realtime)
+        // 訂閱 orders 表格中 table_id = tableId 的變化
+        supabase.channel('my-orders')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `table_id=eq.${tableId}` }, (payload) => {
+                fetchMyOrders(); // 簡單起見，有變化就重拉一次清單
+            })
+            .subscribe();
+        
+        fetchMyOrders(); // 初始載入
+    }
+
+    async function loadMenu(callback) {
+        // 初始載入
+        const { data } = await supabase.from('menu').select('*');
+        if(data) callback(data);
+
+        // 監聽變化
+        supabase.channel('menu-updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'menu' }, async () => {
+                const { data } = await supabase.from('menu').select('*');
+                callback(data);
+            })
+            .subscribe();
+    }
+
+    function renderMenu(menu, type) {
+        const container = type === 'customer' ? document.getElementById('menu-area') : document.getElementById('admin-menu-list');
+        container.innerHTML = '';
+        
+        menu.forEach(dish => {
+            if (type === 'customer') {
+                container.innerHTML += `
+                    <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px;">
+                        <div><b>${dish.name}</b> <br><small>${dish.category}</small> <span style="color:red">$${dish.price}</span></div>
+                        <button class="btn btn-primary" onclick="addToCart('${dish.name}', ${dish.price})">+</button>
+                    </div>`;
+            } else {
+                container.innerHTML += `<div style="padding:5px; border-bottom:1px solid #eee;">${dish.name} ($${dish.price}) <button onclick="deleteDish(${dish.id})" style="float:right; color:red; border:none; background:none;">X</button></div>`;
+            }
+        });
+    }
+
+    function addToCart(name, price) {
+        cart.push({ name, price });
+        document.getElementById('cart-count').innerText = cart.length;
+        document.getElementById('cart-total').innerText = cart.reduce((a,b)=>a+b.price, 0);
+    }
+
+    async function submitOrder() {
+        if (cart.length === 0) return alert('購物車空的！');
+        
+        // 寫入 Supabase (Insert)
+        const { error } = await supabase.from('orders').insert({
+            table_id: tableId,
+            items: cart, // 直接存 JSON 陣列
+            total_price: cart.reduce((a,b)=>a+b.price, 0),
+            status: 'new'
+        });
+
+        if (error) {
+            alert('送出失敗: ' + error.message);
+        } else {
+            alert('✅ 訂單已送出！');
+            cart = [];
+            document.getElementById('cart-count').innerText = 0;
+            document.getElementById('cart-total').innerText = 0;
+        }
+    }
+
+    async function fetchMyOrders() {
+        const { data } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('table_id', tableId)
+            .order('created_at', { ascending: false });
+
+        const list = document.getElementById('my-order-items');
+        list.innerHTML = '';
+        data.forEach(order => {
+            // 解析 JSONB items
+            const itemNames = Array.isArray(order.items) ? order.items.map(i=>i.name).join(', ') : '餐點資料';
+            let statusColor = '#999';
+            if(order.status === 'cooking') statusColor = '#faad14';
+            if(order.status === 'served') statusColor = '#3ecf8e';
+
+            list.innerHTML += `
+                <div style="border-bottom:1px solid #eee; padding:10px 0;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="font-weight:bold;">${itemNames}</span>
+                        <span class="status-badge" style="background:${statusColor}">${translateStatus(order.status)}</span>
+                    </div>
+                    <small style="color:#aaa;">${new Date(order.created_at).toLocaleTimeString()}</small>
+                </div>`;
+        });
+    }
+
+    // ===================================
+    // 👨‍🍳 廚房端邏輯
+    // ===================================
+    function setupKitchen() {
+        document.getElementById('view-kitchen').classList.add('active');
+        document.getElementById('pageTitle').innerText = "👨‍🍳 廚房 KDS 系統";
+        document.querySelector('header').style.background = "#d32f2f";
+        document.querySelector('header').style.color = "white";
+
+        // 監聽所有訂單變化
+        supabase.channel('kitchen-orders')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchKitchenOrders())
+            .subscribe();
+
+        fetchKitchenOrders();
+    }
+
+    async function fetchKitchenOrders() {
+        // 只抓未結帳的 (status != paid)
+        const { data } = await supabase
+            .from('orders')
+            .select('*')
+            .neq('status', 'paid') 
+            .order('created_at', { ascending: true }); // 先進先出
+
+        const container = document.getElementById('kitchen-orders');
+        container.innerHTML = '';
+        
+        data.forEach(order => {
+            const itemNames = Array.isArray(order.items) ? order.items.map(i=>`<li>${i.name}</li>`).join('') : '';
+            
+            let btn = '';
+            let border = 'gray';
+            if (order.status === 'new') {
+                border = '#ff4d4f';
+                btn = `<button class="btn btn-warning" style="width:100%" onclick="updateStatus(${order.id}, 'cooking')">🔥 開始製作</button>`;
+            } else if (order.status === 'cooking') {
+                border = '#faad14';
+                btn = `<button class="btn btn-primary" style="width:100%" onclick="updateStatus(${order.id}, 'served')">🔔 出餐</button>`;
+            } else if (order.status === 'served') {
+                border = '#3ecf8e';
+                btn = `<button class="btn btn-dark" style="width:100%" onclick="updateStatus(${order.id}, 'paid')">💰 結帳封存</button>`;
+            }
+
+            container.innerHTML += `
+                <div class="card" style="border-left: 5px solid ${border}">
+                    <div style="display:flex; justify-content:space-between">
+                        <h3>${order.table_id}</h3>
+                        <span>${new Date(order.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <ul>${itemNames}</ul>
+                    ${btn}
+                </div>`;
+        });
+    }
+
+    async function updateStatus(id, status) {
+        await supabase.from('orders').update({ status }).eq('id', id);
+    }
+
+    // ===================================
+    // 👨‍💼 老闆後台邏輯
+    // ===================================
+    function setupAdmin() {
+        document.getElementById('view-admin').classList.add('active');
+        document.getElementById('pageTitle').innerText = "後台管理";
+
+        // 1. 菜單管理
+        loadMenu((menu) => renderMenu(menu, 'admin'));
+
+        // 2. 桌況管理 (Realtime)
+        supabase.channel('admin-tables')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, () => fetchTables())
+            .subscribe();
+        fetchTables();
+    }
+
+    async function fetchTables() {
+        const { data } = await supabase.from('tables').select('*').order('id');
+        const list = document.getElementById('admin-tables-list');
+        list.innerHTML = '';
+        
+        data.forEach(t => {
+            const isOpen = t.status === 'open';
+            list.innerHTML += `
+                <div style="padding:10px; border:1px solid #ddd; background:${isOpen?'#e6ffed':'#f9f9f9'}; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>${t.id}</strong> ${isOpen ? '<span style="color:green">●</span>' : '<span style="color:gray">●</span>'}
+                        <br><small style="color:#aaa">${t.code || '-'}</small>
+                    </div>
+                    <div>
+                        ${isOpen ? 
+                            `<button class="btn btn-primary" onclick="showQR('${t.id}', '${t.code}')">QR</button>
+                             <button class="btn btn-danger" onclick="toggleTable('${t.id}', 'closed')">關</button>` :
+                            `<button class="btn btn-dark" onclick="toggleTable('${t.id}', 'open')">開桌</button>`
+                        }
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function toggleTable(id, status) {
+        const updates = { status };
+        if (status === 'open') {
+            updates.code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        } else {
+            updates.code = null;
+            document.getElementById('qrcode-preview').style.display = 'none';
+        }
+        await supabase.from('tables').update(updates).eq('id', id);
+    }
+
+    function showQR(id, code) {
+        const div = document.getElementById('qrcode-preview');
+        const qr = document.getElementById('qrcode');
+        div.style.display = 'block';
+        qr.innerHTML = '';
+        
+        const url = `${window.location.origin}${window.location.pathname}?table=${id}&code=${code}`;
+        new QRCode(qr, { text: url, width: 150, height: 150 });
+        document.getElementById('qr-text').innerHTML = `桌號 ${id}<br><a href="${url}" target="_blank">點此測試連結</a>`;
+        
+        // 捲動到 QR Code
+        div.scrollIntoView({behavior: "smooth"});
+    }
+
+    async function addDish() {
+        const name = document.getElementById('dishName').value;
+        const price = document.getElementById('dishPrice').value;
+        const category = document.getElementById('dishCat').value;
+        if(name && price) {
+            await supabase.from('menu').insert({ name, price, category });
+            document.getElementById('dishName').value = '';
+            document.getElementById('dishPrice').value = '';
+        }
+    }
+
+    async function deleteDish(id) {
+        if(confirm('確定刪除？')) await supabase.from('menu').delete().eq('id', id);
+    }
+
+    function translateStatus(s) {
+        const map = { 'new': '等待製作', 'cooking': '烹飪中', 'served': '已上菜', 'paid': '已結帳' };
+        return map[s] || s;
+    }
+
+    // 啟動
+    init();
+
+</script>
+</body>
+</html>
