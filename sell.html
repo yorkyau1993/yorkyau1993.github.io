@@ -130,7 +130,7 @@
 
     <script>
         // ================= 請替換網址 =================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzH8l2y_8LvOOpy-jwTDTKe9VI2gV3AcgaAbI5hh6SX4JqA8De8laq23-oRHU9tTJGp/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxbv7_vP00kzq2kO8uQfYUY0JSA4pUy5IZWMicXmnCovJA84R06WX6u8cMh2A0ER8dB/exec"; 
         // ============================================
 
         const today = new Date().toISOString().split('T')[0];
@@ -183,22 +183,42 @@
             if (tabId === 'pending') renderPending(); if (tabId === 'records') renderRecords(); if (tabId === 'profit') calculatePortfolio(); if (tabId === 'payment') renderPaymentChecklist();
         }
 
-        // === 核心修復：提交後等待與重整 ===
+        // === 優化版：延長等待時間至 2.5 秒 ===
         function submitRequest() {
-            const d = {action:"add_request", date:document.getElementById('req-date').value, ticker:document.getElementById('req-ticker').value, type:document.getElementById('req-type').value, price:document.getElementById('req-price').value, shares:document.getElementById('req-shares').value};
-            if(!d.price||!d.shares) return showToast("資料不全","error"); 
+            const btn = document.getElementById('btn-req');
+            const d = {
+                action: "add_request", 
+                date: document.getElementById('req-date').value, 
+                ticker: document.getElementById('req-ticker').value, 
+                type: document.getElementById('req-type').value, 
+                price: document.getElementById('req-price').value, 
+                shares: document.getElementById('req-shares').value
+            };
             
-            document.getElementById('btn-req').disabled=true;
+            if(!d.price || !d.shares) return showToast("資料不全", "error"); 
             
-            fetch(GAS_URL, {method:"POST", body:JSON.stringify(d)}).then(res=>res.json()).then(()=>{ 
-                showToast("✅ 已送出，同步中...", "success"); 
-                document.getElementById('btn-req').disabled=false; 
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span> 處理中...'; // 讓按鈕顯示處理中
+            
+            fetch(GAS_URL, {method:"POST", body:JSON.stringify(d)})
+            .then(res => res.json())
+            .then(() => { 
+                showToast("✅ 已送出，正在同步...", "success"); 
                 
-                // ⭐ 這裡故意延遲 0.8 秒，等待 Google Sheet 寫入完成後再抓取
+                // ⭐ 關鍵修改：延長等待時間到 2500 毫秒 (2.5秒)
                 setTimeout(() => {
                     refreshData(); 
                     switchTab('pending'); 
-                }, 800);
+                    
+                    // 恢復按鈕狀態
+                    btn.disabled = false;
+                    btn.innerText = "送出委託單";
+                }, 2500); 
+            })
+            .catch(err => {
+                showToast("❌ 連線失敗", "error");
+                btn.disabled = false;
+                btn.innerText = "送出委託單";
             });
         }
 
