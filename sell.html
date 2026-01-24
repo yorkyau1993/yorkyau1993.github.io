@@ -6,14 +6,7 @@
     <title>股票管家 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        document.onkeydown = function(e) {
-            if(e.keyCode == 123) return false;
-            if(e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) return false;
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
-        }
-    </script>
+    
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
