@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <script>
+    // 🚫 禁止右鍵選單
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    // 🚫 禁止 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (檢視原始碼)
+    document.onkeydown = function(e) {
+        if (event.keyCode == 123) { // F12
+            return false;
+        }
+        if (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) {
+            return false;
+        }
+        if (e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0))) {
+            return false;
+        }
+    }
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>股票管家 穩定版</title>
