@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>股票管家 Pro</title>
+    <title>股票管家 穩定版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -16,10 +16,8 @@
         .loader { width: 14px; height: 14px; border: 2px solid #cbd5e1; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #f8fafc; }
-        /* Chart Transition */
         .chart-container { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
         .chart-container.open { max-height: 250px; opacity: 1; margin-bottom: 1rem; }
-        /* Checkbox */
         .custom-checkbox { width: 1.2rem; height: 1.2rem; }
     </style>
 </head>
@@ -32,7 +30,7 @@
                 <span id="header-icon">📝</span>
                 <span id="page-title">委託下單</span>
             </h1>
-            <div id="status-indicator" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-1 rounded text-gray-400 font-mono">● 連線中</div>
+            <div id="status-indicator" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-1 rounded text-gray-400 font-mono" onclick="refreshData()">● 連線中</div>
         </div>
 
         <div id="page-request" class="p-4 page-content animate-fade">
@@ -90,7 +88,7 @@
 
         <div id="page-pending" class="p-4 page-content hidden">
             <div class="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-xl mb-4 text-center border border-yellow-100">
-                🔔 點擊「確認」時請輸入實際成交價格
+                🔔 點擊確認後，請輸入實際成交價
             </div>
             <div id="pending-list" class="space-y-3"></div>
         </div>
@@ -111,14 +109,14 @@
                             <span id="total-unrealized-pl" class="text-gray-300">$0</span>
                         </div>
                     </div>
-                    <button onclick="updateAllPrices()" id="btn-update-all" class="bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold px-3 py-2 rounded-lg transition border border-blue-100">🔄 更新</button>
+                    <button onclick="updateAllPrices()" id="btn-update-all" class="bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold px-3 py-2 rounded-lg transition border border-blue-100">🔄 更新現價</button>
                 </div>
                 <div class="text-xs text-gray-500 flex justify-between items-center border-t border-gray-100 pt-3">
                     <span>持股總市值</span>
                     <span id="total-market-value" class="text-slate-800 font-bold font-mono">$0</span>
                 </div>
             </div>
-            
+            <button onclick="refreshData()" class="w-full text-center text-[10px] text-gray-400 py-2">如數據未更新，請點此重新載入</button>
             <div id="portfolio-list" class="space-y-3 pb-8"></div>
         </div>
 
@@ -159,7 +157,12 @@
     </nav>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzH8l2y_8LvOOpy-jwTDTKe9VI2gV3AcgaAbI5hh6SX4JqA8De8laq23-oRHU9tTJGp/exec"; // 請替換網址
+        // ==========================================
+        //  👇 請將你的 GAS 網址貼在下方 👇
+        // ==========================================
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzH8l2y_8LvOOpy-jwTDTKe9VI2gV3AcgaAbI5hh6SX4JqA8De8laq23-oRHU9tTJGp/exec"; 
+        // ==========================================
+
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('req-date').value = today;
         document.getElementById('pay-date').value = today;
@@ -183,118 +186,110 @@
             if (tabId === 'payment') renderPaymentChecklist();
         }
 
-        // 1. 強制數據計算 (修復股數不顯示問題)
-        function calculatePortfolio() {
-            const list = document.getElementById('portfolio-list'); list.innerHTML = '';
-            portfolio = {}; 
-            let totalRealizedPL = 0;
+        // === 1. 修復：待辦確認 (使用 data-attribute 避免符號錯誤) ===
+        function renderPending() {
+            const list = document.getElementById('pending-list');
+            const badge = document.getElementById('badge-pending');
+            list.innerHTML = '';
             
-            // 確保資料存在
-            const records = globalData.records || [];
-            
-            // 時間正序排列計算
-            const chronologicalRecords = [...records]; // 假設後端回傳已按時間排序，或可在此 sort
-
-            chronologicalRecords.forEach(item => {
-                // 強制轉型，避免文字與數字混淆
-                const ticker = String(item[2]); 
-                const type = item[3]; 
-                const shares = parseInt(item[5]) || 0; 
-                const amount = parseInt(item[6]) || 0; 
-
-                if (!portfolio[ticker]) portfolio[ticker] = { shares: 0, totalCost: 0, avgCost: 0 };
-                
-                if (type === 'buy') { 
-                    portfolio[ticker].shares += shares; 
-                    portfolio[ticker].totalCost += amount; 
-                } else if (type === 'sell') {
-                    let avg = portfolio[ticker].shares > 0 ? (portfolio[ticker].totalCost / portfolio[ticker].shares) : 0;
-                    let costSold = avg * shares;
-                    totalRealizedPL += (amount - costSold);
-                    portfolio[ticker].shares -= shares; 
-                    portfolio[ticker].totalCost -= costSold;
-                }
-            });
-
-            // 更新已實現損益
-            const realizedEl = document.getElementById('total-realized-pl');
-            realizedEl.innerText = `${totalRealizedPL>=0?'+':''}$${Math.round(totalRealizedPL).toLocaleString()}`;
-            realizedEl.className = `text-3xl font-bold font-mono tracking-tight ${totalRealizedPL>=0?'text-green-400':'text-red-400'}`;
-
-            // 渲染持股卡片
-            let hasStock = false;
-            for (let ticker in portfolio) {
-                let p = portfolio[ticker];
-                // 只要股數大於0就顯示
-                if (p.shares > 0) {
-                    hasStock = true; 
-                    p.avgCost = Math.round(p.totalCost / p.shares * 100) / 100;
-                    const card = document.createElement('div');
-                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-200 transition active:scale-[0.99]";
-                    card.id = `card-${ticker}`;
-                    card.innerHTML = `
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <div class="font-bold text-xl text-slate-800 tracking-wide">${ticker}</div>
-                                <div class="text-xs text-gray-400 mt-1">成本均價: $${p.avgCost.toLocaleString()}</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-sm text-gray-500">持有股數</div>
-                                <div class="text-2xl font-bold text-blue-600 font-mono">${p.shares.toLocaleString()}</div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between text-sm mb-2 bg-slate-50 p-2 rounded-lg">
-                            <span class="text-gray-500">預估現價</span>
-                            <span class="font-mono font-bold text-slate-700" id="price-${ticker}">---</span>
-                        </div>
-                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <span class="text-xs text-gray-400 font-bold">未實現損益</span>
-                            <span class="font-bold text-lg font-mono" id="pl-${ticker}">$0</span>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                }
+            if(!globalData.pending || globalData.pending.length===0){ 
+                badge.classList.add('hidden'); 
+                list.innerHTML=`<div class="text-center py-20 text-gray-300">無待辦事項</div>`; 
+                return; 
             }
-            if (!hasStock) list.innerHTML = `<div class="text-center py-20 text-gray-300 bg-white rounded-2xl border border-dashed border-gray-200">無庫存持股</div>`;
-        }
-
-        // 2. 紀錄渲染 (修復不顯示問題)
-        function renderRecords() {
-            const list = document.getElementById('record-list'); list.innerHTML = '';
-            const records = globalData.records || [];
             
-            if (records.length === 0) {
-                 list.innerHTML = `<div class="text-center py-10 text-gray-300">暫無歷史紀錄</div>`;
-                 return;
-            }
-
-            // 反轉顯示，最新的在上面
-            [...records].reverse().forEach(item => {
-                const isBuy = item[3]==='buy';
-                const ticker = item[2];
-                const date = item[1] ? item[1].substring(0,10) : '----';
-                const shares = item[5];
-                const price = item[4];
-                const amount = parseInt(item[6]).toLocaleString();
+            badge.classList.remove('hidden');
+            globalData.pending.forEach(item => {
+                const isBuy = item[4]==='buy';
+                const rawId = item[0].toString();
+                // 使用 data-* 屬性儲存資料，避免 onclick 字串跳脫問題
+                const jsonData = JSON.stringify({
+                    id: rawId, ticker: item[3], type: item[4], shares: item[6], date: item[2], price: item[5]
+                }).replace(/"/g, '&quot;');
 
                 list.innerHTML += `
-                <div class="p-4 flex justify-between items-center hover:bg-gray-50 border-b border-gray-100 transition">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isBuy?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600'}">${isBuy?'買':'賣'}</div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3" id="pending-card-${rawId}">
+                    <div class="flex justify-between items-center">
                         <div>
-                            <div class="font-bold text-sm text-slate-700">${ticker} <span class="text-xs font-normal text-gray-400">x${shares}</span></div>
-                            <div class="text-[10px] text-gray-400">${date}</div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded text-xs font-bold ${isBuy?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600'}">${isBuy?'買':'賣'}</span>
+                                <span class="font-bold text-lg">${item[3]}</span>
+                            </div>
+                            <div class="text-xs text-gray-400">委託: ${item[6]}股 @ $${item[5]}</div>
                         </div>
+                        <button onclick="showConfirmInput('${rawId}')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md active:scale-95 transition">
+                            確認成交
+                        </button>
                     </div>
-                    <div class="text-right">
-                        <div class="font-bold text-sm font-mono ${isBuy?'text-slate-800':'text-green-600'}">$${amount}</div>
-                        <div class="text-[10px] text-gray-400 font-mono">@${price}</div>
+                    
+                    <div id="data-${rawId}" class="hidden" data-json="${jsonData}"></div>
+
+                    <div id="confirm-box-${rawId}" class="hidden mt-3 pt-3 border-t border-gray-100 flex gap-2 items-center animate-fade">
+                        <label class="text-xs text-gray-500 whitespace-nowrap">成交價:</label>
+                        <input type="number" id="real-price-${rawId}" value="${item[5]}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-gray-50 focus:bg-white outline-none focus:ring-1 focus:ring-blue-500">
+                        <button onclick="doConfirm('${rawId}')" id="btn-submit-${rawId}" class="bg-green-600 text-white text-xs px-3 py-1.5 rounded font-bold whitespace-nowrap">
+                            送出
+                        </button>
+                        <button onclick="hideConfirmInput('${rawId}')" class="text-gray-400 text-lg px-1">×</button>
                     </div>
                 </div>`;
             });
         }
 
-        // 3. 通用功能
+        function showConfirmInput(id) {
+            document.getElementById(`confirm-box-${id}`).classList.remove('hidden');
+            document.getElementById(`real-price-${id}`).focus();
+        }
+        function hideConfirmInput(id) {
+            document.getElementById(`confirm-box-${id}`).classList.add('hidden');
+        }
+
+        function doConfirm(id) {
+            // 從 DOM 讀取資料
+            const dataEl = document.getElementById(`data-${id}`);
+            const itemData = JSON.parse(dataEl.getAttribute('data-json'));
+            
+            const priceInput = document.getElementById(`real-price-${id}`);
+            const btn = document.getElementById(`btn-submit-${id}`);
+            const realPrice = parseFloat(priceInput.value);
+
+            if (!realPrice || realPrice <= 0) return alert("請輸入有效的成交價格");
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>';
+
+            const payload = {
+                action: "confirm_request",
+                id: itemData.id,
+                date: itemData.date,
+                ticker: itemData.ticker,
+                type: itemData.type,
+                shares: parseInt(itemData.shares),
+                price: realPrice,
+                amount: Math.round(realPrice * itemData.shares)
+            };
+
+            fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(data => {
+                alert("🎉 成交已確認！");
+                document.getElementById(`pending-card-${id}`).remove();
+                // 這裡稍微等待一下再重整，確保 Google Sheets 寫入完成
+                setTimeout(() => {
+                    refreshData();
+                    switchTab('records', '歷史紀錄');
+                }, 500); 
+            })
+            .catch(err => {
+                alert("❌ 連線錯誤");
+                btn.disabled = false;
+                btn.innerText = "重試";
+            });
+        }
+
+        // === 2. 雙向試算與圖表 ===
+        function calcByShares() { const p = parseFloat(document.getElementById('req-price').value)||0; const s = parseInt(document.getElementById('req-shares').value)||0; if(p>0&&s>0) document.getElementById('req-total').value = Math.round(p*s); else document.getElementById('req-total').value = ''; }
+        function calcByTotal() { const p = parseFloat(document.getElementById('req-price').value)||0; const t = parseInt(document.getElementById('req-total').value)||0; if(p>0&&t>0) document.getElementById('req-shares').value = Math.floor(t/p); else document.getElementById('req-shares').value = ''; }
         function toggleChart(show) { const el = document.getElementById('chart-wrapper'); if (show) el.classList.add('open'); else el.classList.remove('open'); }
         function fetchHistory() {
             const ticker = document.getElementById('req-ticker').value; const btn = document.getElementById('btn-chart');
@@ -308,55 +303,81 @@
             const ctx = document.getElementById('trendChart').getContext('2d'); if (myChart) myChart.destroy();
             const labels = historyData.map(d => d.date); const prices = historyData.map(d => d.price);
             const isUp = prices[prices.length-1] >= prices[0];
-            myChart = new Chart(ctx, {
-                type: 'line', data: { labels: labels, datasets: [{ label: '股價', data: prices, borderColor: isUp?'#ef4444':'#22c55e', borderWidth: 2, backgroundColor: isUp?'rgba(239,68,68,0.05)':'rgba(34,197,94,0.05)', fill: true, tension: 0.1, pointRadius: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: true } } }
-            });
+            myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: '股價', data: prices, borderColor: isUp?'#ef4444':'#22c55e', borderWidth: 2, backgroundColor: isUp?'rgba(239,68,68,0.05)':'rgba(34,197,94,0.05)', fill: true, tension: 0.1, pointRadius: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: true } } } });
         }
-        function calcByShares() { const p = parseFloat(document.getElementById('req-price').value)||0; const s = parseInt(document.getElementById('req-shares').value)||0; if(p>0&&s>0) document.getElementById('req-total').value = Math.round(p*s); else document.getElementById('req-total').value = ''; }
-        function calcByTotal() { const p = parseFloat(document.getElementById('req-price').value)||0; const t = parseInt(document.getElementById('req-total').value)||0; if(p>0&&t>0) document.getElementById('req-shares').value = Math.floor(t/p); else document.getElementById('req-shares').value = ''; }
-        
-        function renderPending() {
-            const list = document.getElementById('pending-list'); const badge = document.getElementById('badge-pending'); list.innerHTML = '';
-            if(!globalData.pending || globalData.pending.length===0){ badge.classList.add('hidden'); list.innerHTML=`<div class="text-center py-20 text-gray-300">無待辦事項</div>`; return; }
-            badge.classList.remove('hidden');
-            globalData.pending.forEach(item => {
-                const isBuy = item[4]==='buy';
-                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3 flex justify-between items-center"><div><div class="flex items-center gap-2 mb-1"><span class="px-2 py-0.5 rounded text-xs font-bold ${isBuy?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600'}">${isBuy?'買':'賣'}</span><span class="font-bold text-lg">${item[3]}</span></div><div class="text-xs text-gray-400">委託: ${item[6]}股 @ $${item[5]}</div></div><button onclick="confirmItem('${item[0]}','${item[3]}','${item[4]}',${item[6]},${item[5]},'${item[2]}')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md active:scale-95 transition">確認成交</button></div>`;
+
+        // === 3. 損益與紀錄 ===
+        function calculatePortfolio() {
+            const list = document.getElementById('portfolio-list'); list.innerHTML = '';
+            portfolio = {}; let totalRealizedPL = 0;
+            const records = globalData.records || [];
+            
+            [...records].forEach(item => {
+                const ticker = String(item[2]); const type = item[3]; const shares = parseInt(item[5]) || 0; const amount = parseInt(item[6]) || 0; 
+                if (!portfolio[ticker]) portfolio[ticker] = { shares: 0, totalCost: 0, avgCost: 0 };
+                if (type === 'buy') { portfolio[ticker].shares += shares; portfolio[ticker].totalCost += amount; } 
+                else if (type === 'sell') {
+                    let avg = portfolio[ticker].shares > 0 ? (portfolio[ticker].totalCost / portfolio[ticker].shares) : 0;
+                    let costSold = avg * shares;
+                    totalRealizedPL += (amount - costSold);
+                    portfolio[ticker].shares -= shares; portfolio[ticker].totalCost -= costSold;
+                }
             });
-        }
-        function confirmItem(id, ticker, type, shares, defPrice, date) {
-            const realPrice = prompt(`請輸入【${ticker}】實際成交單價：`, defPrice);
-            if(realPrice) { 
-                const p = parseFloat(realPrice);
-                // 這裡發送請求，成功後必須呼叫 refreshData()
-                fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"confirm_request", id, date, ticker, type, shares, price: p, amount: Math.round(p*shares)})})
-                .then(res => res.json())
-                .then(() => { 
-                    alert("🎉 成交已確認"); 
-                    // 強制重新抓取資料
-                    refreshData(); 
-                    switchTab('records','紀錄'); 
-                }); 
+
+            const realizedEl = document.getElementById('total-realized-pl');
+            realizedEl.innerText = `${totalRealizedPL>=0?'+':''}$${Math.round(totalRealizedPL).toLocaleString()}`;
+            realizedEl.className = `text-3xl font-bold font-mono tracking-tight ${totalRealizedPL>=0?'text-green-400':'text-red-400'}`;
+
+            let hasStock = false;
+            for (let ticker in portfolio) {
+                let p = portfolio[ticker];
+                if (p.shares > 0) {
+                    hasStock = true; 
+                    p.avgCost = Math.round(p.totalCost / p.shares * 100) / 100;
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-200 transition active:scale-[0.99]";
+                    card.id = `card-${ticker}`;
+                    card.innerHTML = `<div class="flex justify-between items-start mb-3"><div><div class="font-bold text-xl text-slate-800 tracking-wide">${ticker}</div><div class="text-xs text-gray-400 mt-1">成本均價: $${p.avgCost.toLocaleString()}</div></div><div class="text-right"><div class="text-sm text-gray-500">持有股數</div><div class="text-2xl font-bold text-blue-600 font-mono">${p.shares.toLocaleString()}</div></div></div><div class="flex justify-between text-sm mb-2 bg-slate-50 p-2 rounded-lg"><span class="text-gray-500">預估現價</span><span class="font-mono font-bold text-slate-700" id="price-${ticker}">---</span></div><div class="flex justify-between items-center pt-2 border-t border-gray-100"><span class="text-xs text-gray-400 font-bold">未實現損益</span><span class="font-bold text-lg font-mono" id="pl-${ticker}">$0</span></div>`;
+                    list.appendChild(card);
+                }
             }
+            if (!hasStock) list.innerHTML = `<div class="text-center py-20 text-gray-300 bg-white rounded-2xl border border-dashed border-gray-200">無庫存持股</div>`;
         }
-        function renderPaymentChecklist() {
-            const list = document.getElementById('buy-checklist'); list.innerHTML = '';
-            const buys = [...globalData.records].filter(r => r[3] === 'buy').reverse();
-            if (buys.length === 0) { list.innerHTML = `<div class="text-[10px] text-gray-400 text-center py-4">無項目</div>`; return; }
-            buys.forEach((item, index) => {
-                const amount = parseInt(item[6]); const ticker = item[2]; const date = item[1].substring(5, 10); const uid = `chk-${index}`;
-                list.innerHTML += `<div class="flex items-center gap-2 bg-white p-2 rounded border border-gray-100 text-xs transition active:bg-blue-50"><input type="checkbox" id="${uid}" class="custom-checkbox flex-shrink-0" onchange="updatePaymentTotal('${ticker}', '${date}', ${amount}, this)"><label for="${uid}" class="flex-1 flex justify-between cursor-pointer select-none"><span class="flex items-center gap-2"><span class="text-gray-400">${date}</span><span class="font-bold text-slate-700">${ticker}</span></span><span class="font-mono font-bold text-green-600">$${amount.toLocaleString()}</span></label></div>`;
+
+        function renderRecords() {
+            const list = document.getElementById('record-list'); list.innerHTML = '';
+            const records = globalData.records || [];
+            if (records.length === 0) { list.innerHTML = `<div class="text-center py-10 text-gray-300">暫無歷史紀錄</div>`; return; }
+            [...records].reverse().forEach(item => {
+                const isBuy = item[3]==='buy'; const ticker = item[2]; const date = item[1] ? item[1].substring(0,10) : '----'; const shares = item[5]; const price = item[4]; const amount = parseInt(item[6]).toLocaleString();
+                list.innerHTML += `<div class="p-4 flex justify-between items-center hover:bg-gray-50 border-b border-gray-100 transition"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isBuy?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600'}">${isBuy?'買':'賣'}</div><div><div class="font-bold text-sm text-slate-700">${ticker} <span class="text-xs font-normal text-gray-400">x${shares}</span></div><div class="text-[10px] text-gray-400">${date}</div></div></div><div class="text-right"><div class="font-bold text-sm font-mono ${isBuy?'text-slate-800':'text-green-600'}">$${amount}</div><div class="text-[10px] text-gray-400 font-mono">@${price}</div></div></div>`;
             });
         }
-        function updatePaymentTotal(ticker, date, amount, checkbox) {
-            const amtIn = document.getElementById('pay-amount'); const noteIn = document.getElementById('pay-note');
-            let curAmt = parseInt(amtIn.value) || 0; let curNote = noteIn.value; const tag = `${ticker}(${date})`;
-            if (checkbox.checked) { curAmt += amount; curNote = !curNote ? `付: ${tag}` : (!curNote.includes(tag) ? `${curNote}, ${tag}` : curNote); }
-            else { curAmt -= amount; curNote = curNote.replace(`, ${tag}`, '').replace(`${tag}, `, '').replace(`付: ${tag}`, '付: ').replace('付: ,', '付: '); if(curNote.trim()==='付:') curNote=''; }
-            amtIn.value = curAmt > 0 ? curAmt : ''; noteIn.value = curNote;
+
+        // === 4. 核心：資料刷新 (防止快取) ===
+        function refreshData() {
+            const ind = document.getElementById('status-indicator'); 
+            ind.innerText = "● 更新中"; 
+            ind.className="text-[10px] bg-yellow-50 border border-yellow-200 text-yellow-600 px-2 py-1 rounded font-mono cursor-pointer";
+            
+            // 加上時間戳記防止快取
+            fetch(`${GAS_URL}?t=${new Date().getTime()}`)
+            .then(res => res.json())
+            .then(data => { 
+                globalData = data; 
+                if(!globalData.records) globalData.records = [];
+                if(!globalData.pending) globalData.pending = [];
+                renderPending(); 
+                ind.innerText = "● 已連線"; 
+                ind.className="text-[10px] bg-green-50 border border-green-200 text-green-600 px-2 py-1 rounded font-mono cursor-pointer";
+            })
+            .catch(()=>{ 
+                ind.innerText = "❌ 離線 (點此重試)"; 
+                ind.className="text-[10px] bg-red-50 border border-red-200 text-red-600 px-2 py-1 rounded font-mono cursor-pointer"; 
+            });
         }
-        function clearChecks() { document.querySelectorAll('#buy-checklist input').forEach(c => c.checked = false); document.getElementById('pay-amount').value = ''; document.getElementById('pay-note').value = ''; }
+
+        // === 其他通用 ===
         function submitRequest() {
             const d = {action:"add_request", date:document.getElementById('req-date').value, ticker:document.getElementById('req-ticker').value, type:document.getElementById('req-type').value, price:document.getElementById('req-price').value, shares:document.getElementById('req-shares').value};
             if(!d.price||!d.shares) return alert("資料不全"); document.getElementById('btn-req').disabled=true;
@@ -394,21 +415,26 @@
             const plLabel = document.getElementById('total-unrealized-pl');
             plLabel.innerText = `${totalPL>=0?'+':''}$${totalPL.toLocaleString()}`;
             plLabel.className = `text-3xl font-bold font-mono tracking-tight ${totalPL>=0?'text-red-500':'text-green-500'}`;
-            btn.disabled = false; btn.innerHTML = '🔄 更新';
+            btn.disabled = false; btn.innerHTML = '🔄 更新現價';
         }
 
-        function refreshData() {
-            const ind = document.getElementById('status-indicator'); ind.innerText = "● 更新中"; ind.className="text-[10px] bg-yellow-50 border border-yellow-200 text-yellow-600 px-2 py-1 rounded font-mono";
-            fetch(GAS_URL).then(res => res.json()).then(data => { 
-                globalData = data; 
-                // 確保 records 是陣列
-                if(!globalData.records) globalData.records = [];
-                if(!globalData.pending) globalData.pending = [];
-                
-                renderPending(); 
-                ind.innerText = "● 已連線"; ind.className="text-[10px] bg-green-50 border border-green-200 text-green-600 px-2 py-1 rounded font-mono";
-            }).catch(()=>{ ind.innerText = "❌ 離線"; ind.className="text-[10px] bg-red-50 border border-red-200 text-red-600 px-2 py-1 rounded font-mono"; });
+        function renderPaymentChecklist() {
+            const list = document.getElementById('buy-checklist'); list.innerHTML = '';
+            const buys = [...globalData.records].filter(r => r[3] === 'buy').reverse();
+            if (buys.length === 0) { list.innerHTML = `<div class="text-[10px] text-gray-400 text-center py-4">無項目</div>`; return; }
+            buys.forEach((item, index) => {
+                const amount = parseInt(item[6]); const ticker = item[2]; const date = item[1].substring(5, 10); const uid = `chk-${index}`;
+                list.innerHTML += `<div class="flex items-center gap-2 bg-white p-2 rounded border border-gray-100 text-xs transition active:bg-blue-50"><input type="checkbox" id="${uid}" class="custom-checkbox flex-shrink-0" onchange="updatePaymentTotal('${ticker}', '${date}', ${amount}, this)"><label for="${uid}" class="flex-1 flex justify-between cursor-pointer select-none"><span class="flex items-center gap-2"><span class="text-gray-400">${date}</span><span class="font-bold text-slate-700">${ticker}</span></span><span class="font-mono font-bold text-green-600">$${amount.toLocaleString()}</span></label></div>`;
+            });
         }
+        function updatePaymentTotal(ticker, date, amount, checkbox) {
+            const amtIn = document.getElementById('pay-amount'); const noteIn = document.getElementById('pay-note');
+            let curAmt = parseInt(amtIn.value) || 0; let curNote = noteIn.value; const tag = `${ticker}(${date})`;
+            if (checkbox.checked) { curAmt += amount; curNote = !curNote ? `付: ${tag}` : (!curNote.includes(tag) ? `${curNote}, ${tag}` : curNote); }
+            else { curAmt -= amount; curNote = curNote.replace(`, ${tag}`, '').replace(`${tag}, `, '').replace(`付: ${tag}`, '付: ').replace('付: ,', '付: '); if(curNote.trim()==='付:') curNote=''; }
+            amtIn.value = curAmt > 0 ? curAmt : ''; noteIn.value = curNote;
+        }
+        function clearChecks() { document.querySelectorAll('#buy-checklist input').forEach(c => c.checked = false); document.getElementById('pay-amount').value = ''; document.getElementById('pay-note').value = ''; }
     </script>
 </body>
 </html>
