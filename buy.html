@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>股票輸入工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        .tab-btn { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: bold; color: #9ca3af; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab-active { color: #2563eb; border-bottom-color: #2563eb; background: #eff6ff; }
+        .loader { width: 16px; height: 16px; border: 2px solid #ddd; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input, select { -webkit-appearance: none; } /* 手機版優化 */
+    </style>
+</head>
+<body class="text-slate-800 pb-10">
+
+    <div class="max-w-md mx-auto min-h-screen bg-white shadow-xl overflow-hidden flex flex-col">
+        
+        <div class="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-10">
+            <h1 class="font-bold text-lg flex items-center gap-2">📝 股票輸入工具</h1>
+            <div id="status-light" class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]"></div>
+        </div>
+
+        <div class="flex border-b border-gray-200 sticky top-[60px] bg-white z-10">
+            <button onclick="switchTab('request')" id="tab-request" class="tab-btn tab-active">委託下單</button>
+            <button onclick="switchTab('pending')" id="tab-pending" class="tab-btn relative">
+                待辦確認 <span id="badge-count" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            <button onclick="switchTab('payment')" id="tab-payment" class="tab-btn">登記匯款</button>
+        </div>
+
+        <div id="page-request" class="p-5 flex-1 flex flex-col gap-4">
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <h3 class="font-bold text-blue-800 mb-3 text-sm">新增購買/賣出需求</h3>
+                
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold ml-1">日期</label>
+                        <input type="date" id="req-date" class="w-full border rounded-lg p-3 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold ml-1">動作</label>
+                        <select id="req-type" class="w-full border rounded-lg p-3 bg-white text-sm">
+                            <option value="buy">🔵 買進</option>
+                            <option value="sell">🔴 賣出</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-xs text-gray-500 font-bold ml-1">股票代號</label>
+                    <input type="text" id="req-ticker" value="006208" class="w-full border rounded-lg p-3 text-center text-lg font-bold tracking-widest bg-white">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold ml-1">預算/價格</label>
+                        <input type="number" id="req-price" step="0.01" class="w-full border rounded-lg p-3 bg-white text-sm" placeholder="例如 168">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold ml-1">股數</label>
+                        <input type="number" id="req-shares" class="w-full border rounded-lg p-3 bg-white text-sm" placeholder="例如 100">
+                    </div>
+                </div>
+
+                <button onclick="submitRequest()" id="btn-req" class="w-full bg-blue-600 active:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-95 flex justify-center items-center gap-2">
+                    送出委託單
+                </button>
+            </div>
+            <p class="text-xs text-gray-400 text-center">送出後，請朋友到「待辦確認」頁面執行</p>
+        </div>
+
+        <div id="page-pending" class="p-5 flex-1 hidden">
+            <div class="flex justify-between items-end mb-3">
+                <h3 class="font-bold text-gray-700 text-sm">等待成交列表</h3>
+                <button onclick="loadPendingData()" class="text-xs text-blue-500 font-bold bg-blue-50 px-2 py-1 rounded">↻ 重新整理</button>
+            </div>
+            
+            <div id="pending-list" class="space-y-3">
+                <div class="text-center py-10 text-gray-400 text-sm">載入中...</div>
+            </div>
+        </div>
+
+        <div id="page-payment" class="p-5 flex-1 hidden">
+            <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+                <h3 class="font-bold text-green-800 mb-3 text-sm">轉帳給朋友</h3>
+                
+                <div class="mb-3">
+                    <label class="text-xs text-gray-500 font-bold ml-1">匯款日期</label>
+                    <input type="date" id="pay-date" class="w-full border rounded-lg p-3 bg-white text-sm">
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-xs text-gray-500 font-bold ml-1">金額 (TWD)</label>
+                    <input type="number" id="pay-amount" class="w-full border rounded-lg p-3 bg-white text-xl font-bold text-green-600" placeholder="$">
+                </div>
+
+                <button onclick="submitPayment()" id="btn-pay" class="w-full bg-green-600 active:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-200 transition transform active:scale-95 flex justify-center items-center gap-2">
+                    確認已匯款
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 👇👇👇 請在這裡貼上你的 GAS 網址 👇👇👇
+        const GAS_URL = "YOUR_GAS_URL_HERE"; 
+        // 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
+
+        // 初始化日期
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('req-date').value = today;
+        document.getElementById('pay-date').value = today;
+
+        // 啟動時讀取資料
+        loadPendingData();
+
+        function switchTab(tabName) {
+            ['request', 'pending', 'payment'].forEach(t => {
+                document.getElementById('page-' + t).classList.add('hidden');
+                document.getElementById('tab-' + t).className = "tab-btn";
+            });
+            document.getElementById('page-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).className = "tab-btn tab-active";
+
+            if(tabName === 'pending') loadPendingData();
+        }
+
+        function loadPendingData() {
+            const list = document.getElementById('pending-list');
+            document.getElementById('status-light').className = "w-3 h-3 rounded-full bg-yellow-400 animate-pulse"; // Loading status
+
+            fetch(GAS_URL)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('status-light').className = "w-3 h-3 rounded-full bg-green-500";
+                    renderPendingList(data.pending);
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('status-light').className = "w-3 h-3 rounded-full bg-red-500";
+                    list.innerHTML = `<div class="text-center py-4 text-red-400 text-sm">連線失敗，請檢查網址</div>`;
+                });
+        }
+
+        function renderPendingList(data) {
+            const list = document.getElementById('pending-list');
+            const badge = document.getElementById('badge-count');
+            list.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-gray-300 text-sm flex flex-col items-center"><span class="text-3xl mb-2">💤</span>目前沒有待辦委託</div>`;
+                badge.classList.add('hidden');
+                return;
+            }
+
+            // 更新小紅點
+            badge.classList.remove('hidden');
+
+            data.forEach(item => {
+                // 資料結構: [ID, Time, Date, Ticker, Type, Price, Shares]
+                const id = item[0];
+                const dateShort = item[2].substring(5).replace('-','/');
+                const isBuy = item[4] === 'buy';
+                
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold ${isBuy ? 'bg-blue-100 text-blue-600':'bg-red-100 text-red-600'}">
+                                ${isBuy ? '買進':'賣出'}
+                            </span>
+                            <span class="font-bold text-slate-800">${item[3]}</span>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${dateShort} • ${item[6]}股 @ $${item[5]}
+                        </div>
+                    </div>
+                    <button onclick="confirmItem('${id}', '${item[3]}', '${item[4]}', ${item[6]}, ${item[5]}, '${item[2]}')" 
+                        class="bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg active:bg-black">
+                        ✅ 成交
+                    </button>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // 送出委託
+        function submitRequest() {
+            const btn = document.getElementById('btn-req');
+            const payload = {
+                action: "add_request",
+                date: document.getElementById('req-date').value,
+                ticker: document.getElementById('req-ticker').value,
+                type: document.getElementById('req-type').value,
+                price: document.getElementById('req-price').value,
+                shares: document.getElementById('req-shares').value
+            };
+
+            if(!payload.price || !payload.shares) return alert("請輸入價格與股數");
+            
+            setLoading(btn, true);
+            
+            fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(() => {
+                alert("委託已送出！");
+                document.getElementById('req-shares').value = ''; // 清空股數
+                setLoading(btn, false, "送出委託單");
+                switchTab('pending'); // 自動跳轉去檢查
+            });
+        }
+
+        // 朋友按確認成交
+        function confirmItem(id, ticker, type, shares, defaultPrice, date) {
+            const realPrice = prompt(`確認 ${ticker} 成交價格：`, defaultPrice);
+            if (realPrice) {
+                const amount = Math.round(parseFloat(realPrice) * parseInt(shares));
+                const payload = {
+                    action: "confirm_request",
+                    id: id,
+                    date: date,
+                    ticker: ticker,
+                    type: type,
+                    shares: shares,
+                    price: parseFloat(realPrice),
+                    amount: amount
+                };
+                
+                // 暫時顯示 Loading
+                document.getElementById('pending-list').innerHTML = '<div class="text-center py-10"><span class="loader"></span><div class="text-xs text-gray-400 mt-2">處理成交中...</div></div>';
+
+                fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
+                .then(res => res.json())
+                .then(() => {
+                    loadPendingData(); // 重新整理
+                });
+            }
+        }
+
+        // 送出匯款
+        function submitPayment() {
+            const btn = document.getElementById('btn-pay');
+            const payload = {
+                action: "add_payment",
+                date: document.getElementById('pay-date').value,
+                amount: document.getElementById('pay-amount').value,
+                note: "APP輸入"
+            };
+
+            if(!payload.amount) return alert("請輸入金額");
+
+            setLoading(btn, true);
+
+            fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(() => {
+                alert("匯款已登記");
+                document.getElementById('pay-amount').value = '';
+                setLoading(btn, false, "確認已匯款");
+            });
+        }
+
+        function setLoading(btn, isLoading, text) {
+            if(isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loader"></span> 處理中...';
+                btn.classList.add('opacity-70');
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = text;
+                btn.classList.remove('opacity-70');
+            }
+        }
+    </script>
+</body>
+</html>
