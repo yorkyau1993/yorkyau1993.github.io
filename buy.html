@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>股票管家 結帳版</title>
+    <title>股票管家 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
         .nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 10px; color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: color 0.2s; }
@@ -14,14 +15,10 @@
         .nav-icon { font-size: 20px; margin-bottom: 2px; }
         .loader { width: 14px; height: 14px; border: 2px solid #cbd5e1; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .profit-up { color: #ef4444; } 
-        .profit-down { color: #22c55e; }
-        .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #f8fafc; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-        
-        /* Checkbox 美化 */
-        .custom-checkbox { width: 1.25rem; height: 1.25rem; border-radius: 0.25rem; border: 2px solid #cbd5e1; appearance: none; background-color: white; cursor: pointer; position: relative; }
-        .custom-checkbox:checked { background-color: #16a34a; border-color: #16a34a; }
-        .custom-checkbox:checked::after { content: '✓'; position: absolute; color: white; font-size: 0.8rem; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; }
+        .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #f8fafc; }
+        /* Chart Transition */
+        .chart-container { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
+        .chart-container.open { max-height: 250px; opacity: 1; margin-bottom: 1rem; }
     </style>
 </head>
 <body class="text-slate-800">
@@ -37,27 +34,38 @@
         </div>
 
         <div id="page-request" class="p-4 page-content animate-fade">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 space-y-5">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 space-y-4">
                 
                 <div class="flex gap-3">
-                    <input type="date" id="req-date" class="flex-1 border border-gray-300 rounded-xl p-3 bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                    <select id="req-type" class="w-24 border border-gray-300 rounded-xl p-3 bg-gray-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    <input type="date" id="req-date" class="flex-1 border border-gray-300 rounded-xl p-3 bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="req-type" class="w-24 border border-gray-300 rounded-xl p-3 bg-gray-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="buy">買進</option>
                         <option value="sell">賣出</option>
                     </select>
                 </div>
 
-                <div class="relative">
-                    <input type="text" id="req-ticker" value="006208" class="w-full border border-gray-300 rounded-xl p-4 text-center text-2xl font-bold tracking-[0.1em] bg-gray-50 placeholder-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="代號">
-                    <p class="text-[10px] text-center text-gray-400 mt-2">輸入股票代號</p>
+                <div>
+                    <div class="relative flex items-center gap-2">
+                        <input type="text" id="req-ticker" value="006208" class="flex-1 border border-gray-300 rounded-xl p-3 text-center text-xl font-bold tracking-[0.1em] placeholder-gray-300 outline-none focus:ring-2 focus:ring-blue-500" placeholder="代號">
+                        <button onclick="fetchHistory()" id="btn-chart" class="bg-indigo-50 text-indigo-600 border border-indigo-100 p-3 rounded-xl font-bold text-xs whitespace-nowrap active:scale-95 transition">
+                            📈 走勢
+                        </button>
+                    </div>
+                </div>
+
+                <div id="chart-wrapper" class="chart-container bg-slate-50 rounded-xl border border-slate-200 relative">
+                    <button onclick="toggleChart(false)" class="absolute top-1 right-2 text-gray-400 hover:text-gray-600 text-lg z-10">×</button>
+                    <div class="h-48 w-full p-2">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
 
                 <div class="flex gap-2 items-end">
                     <div class="flex-1">
                         <label class="text-xs text-gray-500 ml-1 font-bold">單價</label>
-                        <input type="number" id="req-price" step="0.01" class="w-full border border-gray-300 rounded-xl p-3 bg-gray-50 text-lg font-bold text-blue-600 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="價格" oninput="calcByShares()">
+                        <input type="number" id="req-price" step="0.01" class="w-full border border-gray-300 rounded-xl p-3 bg-white text-lg font-bold text-blue-600 outline-none focus:ring-2 focus:ring-blue-500" placeholder="價格" oninput="calcByShares()">
                     </div>
-                    <button onclick="fetchPrice()" id="btn-price" class="bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 font-bold px-4 py-3 rounded-xl mb-[1px] active:scale-95 transition text-sm whitespace-nowrap">
+                    <button onclick="fetchPrice()" id="btn-price" class="bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 font-bold px-4 py-3 rounded-xl mb-[1px] active:scale-95 transition text-sm">
                         🔍 抓現價
                     </button>
                 </div>
@@ -65,34 +73,35 @@
                 <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 relative">
                     <div>
                         <label class="text-xs text-gray-500 ml-1 font-bold">股數</label>
-                        <input type="number" id="req-shares" class="w-full border border-gray-300 rounded-xl p-3 bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="輸入股數" oninput="calcByShares()">
+                        <input type="number" id="req-shares" class="w-full border border-gray-300 rounded-xl p-3 bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="股數" oninput="calcByShares()">
                     </div>
-                    <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-xs">↔️</div>
+                    
+                    <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-xs bg-slate-50 p-1">↔️</div>
+                    
                     <div class="relative">
-                        <label class="text-xs text-gray-500 ml-1 font-bold text-blue-600">或 輸入金額</label>
+                        <label class="text-xs text-gray-500 ml-1 font-bold text-blue-600">或 總金額</label>
                         <span class="absolute left-3 top-[34px] text-gray-400 text-sm">$</span>
-                        <input type="number" id="req-total" class="w-full border border-blue-200 rounded-xl p-3 pl-6 bg-white text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="預算" oninput="calcByTotal()">
+                        <input type="number" id="req-total" class="w-full border border-blue-200 rounded-xl p-3 pl-6 bg-white text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500" placeholder="預算" oninput="calcByTotal()">
                     </div>
                 </div>
-                <p class="text-[10px] text-center text-gray-400">💡 輸入金額會自動算出最大可買股數 (無條件捨去)</p>
+                <p class="text-[10px] text-center text-gray-400">💡 輸入金額將自動換算最大可買股數</p>
 
                 <button onclick="submitRequest()" id="btn-req" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-[0.98] text-lg">
                     送出委託單
                 </button>
-                <p class="text-[10px] text-center text-gray-400">送出後，請通知朋友至「待辦」頁面購買並確認</p>
             </div>
         </div>
 
         <div id="page-pending" class="p-4 page-content hidden">
-            <div class="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-xl mb-4 text-center border border-yellow-100 flex items-center justify-center gap-2">
-                <span>🔔</span> 此處顯示未成交委託，請朋友購買後按確認
+            <div class="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-xl mb-4 text-center border border-yellow-100">
+                🔔 點擊「確認」時請輸入實際成交價格
             </div>
             <div id="pending-list" class="space-y-3"></div>
         </div>
 
         <div id="page-profit" class="p-4 page-content hidden space-y-4">
             <div class="bg-gradient-to-br from-slate-800 to-black text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 opacity-10 text-9xl select-none">💰</div>
+                <div class="absolute -right-4 -top-4 opacity-10 text-9xl">💰</div>
                 <div class="relative z-10">
                     <div class="text-xs text-gray-400 font-bold tracking-wider mb-1">已實現損益 (REALIZED)</div>
                     <div class="text-3xl font-bold font-mono tracking-tight" id="total-realized-pl">$0</div>
@@ -117,39 +126,29 @@
         </div>
 
         <div id="page-records" class="p-0 page-content hidden">
-            <div class="sticky top-[60px] bg-gray-50/95 backdrop-blur p-2 text-[10px] text-gray-500 text-center border-b z-30">歷史成交紀錄 (朋友已買入)</div>
+            <div class="sticky top-[60px] bg-gray-50/95 backdrop-blur p-2 text-[10px] text-gray-500 text-center border-b z-30">歷史成交紀錄</div>
             <div id="record-list" class="divide-y divide-gray-100 bg-white"></div>
         </div>
 
         <div id="page-payment" class="p-4 page-content hidden">
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 space-y-4">
-                <div class="text-center">
-                    <div class="text-4xl mb-2">💸</div>
-                    <h2 class="text-green-700 font-bold text-xl">匯款登記</h2>
-                </div>
-                
+                <div class="text-center"><div class="text-4xl mb-2">💸</div><h2 class="text-green-700 font-bold text-xl">匯款登記</h2></div>
                 <div class="bg-gray-50 rounded-xl p-3 border border-gray-200">
                     <div class="flex justify-between items-center mb-2 px-1">
-                        <div class="text-xs font-bold text-gray-500">朋友已幫買項目 (勾選結帳)</div>
+                        <div class="text-xs font-bold text-gray-500">勾選以結帳 (朋友已買項目)</div>
                         <button onclick="clearChecks()" class="text-[10px] text-blue-500">清除</button>
                     </div>
-                    <div id="buy-checklist" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        <div class="text-center text-gray-300 text-xs py-2">載入中...</div>
-                    </div>
+                    <div id="buy-checklist" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
                 </div>
-
                 <div class="space-y-3 pt-2">
                     <input type="date" id="pay-date" class="w-full border border-gray-300 rounded-xl p-3 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500">
                     <div class="relative">
                         <span class="absolute left-4 top-3.5 text-gray-400 text-lg">$</span>
                         <input type="number" id="pay-amount" class="w-full border border-gray-300 rounded-xl p-3 pl-8 bg-white text-xl font-bold text-green-600 outline-none focus:ring-2 focus:ring-green-500" placeholder="0">
                     </div>
-                    <input type="text" id="pay-note" class="w-full border border-gray-300 rounded-xl p-3 bg-gray-50 text-xs text-gray-500 outline-none" placeholder="備註 (勾選後自動填寫)">
+                    <input type="text" id="pay-note" class="w-full border border-gray-300 rounded-xl p-3 bg-gray-50 text-xs text-gray-500 outline-none" placeholder="備註 (自動填寫)">
                 </div>
-
-                <button onclick="submitPayment()" id="btn-pay" class="w-full bg-green-600 hover:bg-green-500 active:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 transition transform active:scale-[0.98] text-lg">
-                    確認已匯款
-                </button>
+                <button onclick="submitPayment()" id="btn-pay" class="w-full bg-green-600 hover:bg-green-500 active:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 transition transform active:scale-[0.98] text-lg">確認已匯款</button>
             </div>
         </div>
     </div>
@@ -163,17 +162,13 @@
     </nav>
 
     <script>
-        // ==========================================
-        //  👇 請將你的 GAS 網址貼在下方 👇
-        // ==========================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzH8l2y_8LvOOpy-jwTDTKe9VI2gV3AcgaAbI5hh6SX4JqA8De8laq23-oRHU9tTJGp/exec"; 
-        // ==========================================
-
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzH8l2y_8LvOOpy-jwTDTKe9VI2gV3AcgaAbI5hh6SX4JqA8De8laq23-oRHU9tTJGp/exec"; // 記得換網址
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('req-date').value = today;
         document.getElementById('pay-date').value = today;
         let globalData = { pending: [], records: [] };
         let portfolio = {}; 
+        let myChart = null;
 
         refreshData();
 
@@ -185,14 +180,60 @@
             document.getElementById('page-title').innerText = title;
             const icons = { 'request': '📝', 'pending': '⏳', 'profit': '📊', 'records': '📜', 'payment': '💸' };
             document.getElementById('header-icon').innerText = icons[tabId];
-
             if (tabId === 'pending') renderPending();
             if (tabId === 'records') renderRecords();
             if (tabId === 'profit') calculatePortfolio(); 
-            if (tabId === 'payment') renderPaymentChecklist(); // 切換到匯款頁面時渲染清單
+            if (tabId === 'payment') renderPaymentChecklist();
         }
 
-        // === 1. 雙向試算邏輯 ===
+        // === 1. 圖表功能 (嵌入式) ===
+        function toggleChart(show) {
+            const el = document.getElementById('chart-wrapper');
+            if (show) el.classList.add('open');
+            else el.classList.remove('open');
+        }
+        function fetchHistory() {
+            const ticker = document.getElementById('req-ticker').value;
+            const btn = document.getElementById('btn-chart');
+            if (!ticker) return alert("請輸入代號");
+            
+            btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
+            toggleChart(true); // 展開區域
+
+            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_history", ticker: ticker }) })
+            .then(res => res.json()).then(data => {
+                btn.disabled = false; btn.innerHTML = '📈 走勢';
+                if(data.status === 'success') renderChart(data.history);
+                else alert("無法取得資料");
+            }).catch(() => { btn.disabled = false; btn.innerHTML = '📈 走勢'; });
+        }
+        function renderChart(historyData) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            const labels = historyData.map(d => d.date);
+            const prices = historyData.map(d => d.price);
+            const isUp = prices[prices.length-1] >= prices[0];
+            const color = isUp ? '#ef4444' : '#22c55e';
+            
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '股價', data: prices, borderColor: color, borderWidth: 2,
+                        backgroundColor: isUp ? 'rgba(239,68,68,0.05)' : 'rgba(34,197,94,0.05)',
+                        fill: true, tension: 0.1, pointRadius: 0, pointHitRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: true } }
+                }
+            });
+        }
+
+        // === 2. 雙向試算 ===
         function calcByShares() {
             const p = parseFloat(document.getElementById('req-price').value) || 0;
             const s = parseInt(document.getElementById('req-shares').value) || 0;
@@ -206,88 +247,88 @@
             else document.getElementById('req-shares').value = '';
         }
 
-        // === 2. 匯款勾選清單邏輯 (核心功能) ===
-        function renderPaymentChecklist() {
-            const list = document.getElementById('buy-checklist');
+        // === 3. 待辦確認 (更新價格) ===
+        function renderPending() {
+            const list = document.getElementById('pending-list');
+            const badge = document.getElementById('badge-pending');
             list.innerHTML = '';
-            
-            // 篩選出所有「買入」紀錄 (朋友幫買的)，並反轉（最新的在上面）
-            // 這裡我們假設 records 裡面的 buy 就是你要付錢的項目
-            const buys = [...globalData.records].filter(r => r[3] === 'buy').reverse();
-
-            if (buys.length === 0) {
-                list.innerHTML = `<div class="text-[10px] text-gray-400 text-center py-4">目前沒有需要付款的買入紀錄</div>`;
-                return;
-            }
-
-            buys.forEach((item, index) => {
-                // item: [timestamp, date, ticker, type, price, shares, amount]
-                const amount = parseInt(item[6]);
-                const ticker = item[2];
-                const date = item[1].substring(5, 10); // 只取 MM-DD
-                const uid = `chk-${index}`;
-
-                const row = document.createElement('div');
-                row.className = "flex items-center gap-2 bg-white p-2 rounded border border-gray-100 text-xs transition active:bg-blue-50";
-                row.innerHTML = `
-                    <input type="checkbox" id="${uid}" class="custom-checkbox flex-shrink-0" 
-                        onchange="updatePaymentTotal('${ticker}', '${date}', ${amount}, this)">
-                    <label for="${uid}" class="flex-1 flex justify-between cursor-pointer select-none">
-                        <span class="flex items-center gap-2">
-                            <span class="text-gray-400">${date}</span>
-                            <span class="font-bold text-slate-700 text-sm">${ticker}</span>
-                        </span>
-                        <span class="font-mono font-bold text-green-600">$${amount.toLocaleString()}</span>
-                    </label>
-                `;
-                list.appendChild(row);
+            if(!globalData.pending || globalData.pending.length===0){ badge.classList.add('hidden'); list.innerHTML=`<div class="text-center py-20 text-gray-300">無待辦事項</div>`; return; }
+            badge.classList.remove('hidden');
+            globalData.pending.forEach(item => {
+                const isBuy = item[4]==='buy';
+                // item: [id, time, date, ticker, type, price, shares]
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3 flex justify-between items-center">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1"><span class="px-2 py-0.5 rounded text-xs font-bold ${isBuy?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600'}">${isBuy?'買':'賣'}</span><span class="font-bold text-lg">${item[3]}</span></div>
+                        <div class="text-xs text-gray-400">委託: ${item[6]}股 @ $${item[5]}</div>
+                    </div>
+                    <button onclick="confirmItem('${item[0]}','${item[3]}','${item[4]}',${item[6]},${item[5]},'${item[2]}')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md active:scale-95 transition">
+                        確認成交
+                    </button>
+                </div>`;
             });
         }
-
-        // 勾選後自動加總並更新備註
-        function updatePaymentTotal(ticker, date, amount, checkbox) {
-            const amountInput = document.getElementById('pay-amount');
-            const noteInput = document.getElementById('pay-note');
-            
-            let currentAmount = parseInt(amountInput.value) || 0;
-            let currentNote = noteInput.value;
-
-            // 標記字串，例如 "2330(01-25)"
-            const tag = `${ticker}(${date})`;
-
-            if (checkbox.checked) {
-                currentAmount += amount;
-                // 添加備註
-                if (!currentNote) {
-                    currentNote = `付: ${tag}`;
-                } else if (!currentNote.includes(tag)) {
-                    currentNote += `, ${tag}`;
-                }
-            } else {
-                currentAmount -= amount;
-                // 移除備註 (稍微複雜的字串處理)
-                currentNote = currentNote
-                    .replace(`, ${tag}`, '')
-                    .replace(`${tag}, `, '') // 處理在開頭的情況
-                    .replace(`付: ${tag}`, '付: ') // 處理只有一個的情況
-                    .replace('付: ,', '付: '); // 清理逗號
-                
-                if (currentNote.trim() === '付:') currentNote = '';
+        function confirmItem(id, ticker, type, shares, defPrice, date) {
+            // ★★★ 關鍵：確認時更新價格 ★★★
+            const realPrice = prompt(`請輸入【${ticker}】的實際成交單價：`, defPrice);
+            if(realPrice) { 
+                const p = parseFloat(realPrice);
+                fetch(GAS_URL, {method:"POST", body:JSON.stringify({
+                    action:"confirm_request", 
+                    id, date, ticker, type, shares, 
+                    price: p, // 使用輸入的新價格
+                    amount: Math.round(p*shares)
+                })}).then(()=>{ alert("🎉 成交已確認"); refreshData(); switchTab('records','紀錄'); }); 
             }
-
-            amountInput.value = currentAmount > 0 ? currentAmount : '';
-            noteInput.value = currentNote;
         }
 
+        // === 4. 匯款清單 ===
+        function renderPaymentChecklist() {
+            const list = document.getElementById('buy-checklist'); list.innerHTML = '';
+            const buys = [...globalData.records].filter(r => r[3] === 'buy').reverse();
+            if (buys.length === 0) { list.innerHTML = `<div class="text-[10px] text-gray-400 text-center py-4">無項目</div>`; return; }
+            buys.forEach((item, index) => {
+                const amount = parseInt(item[6]); const ticker = item[2]; const date = item[1].substring(5, 10);
+                const uid = `chk-${index}`;
+                list.innerHTML += `<div class="flex items-center gap-2 bg-white p-2 rounded border border-gray-100 text-xs transition active:bg-blue-50">
+                    <input type="checkbox" id="${uid}" style="width:16px;height:16px;" onchange="updatePaymentTotal('${ticker}', '${date}', ${amount}, this)">
+                    <label for="${uid}" class="flex-1 flex justify-between cursor-pointer select-none"><span class="flex items-center gap-2"><span class="text-gray-400">${date}</span><span class="font-bold text-slate-700">${ticker}</span></span><span class="font-mono font-bold text-green-600">$${amount.toLocaleString()}</span></label>
+                </div>`;
+            });
+        }
+        function updatePaymentTotal(ticker, date, amount, checkbox) {
+            const amtIn = document.getElementById('pay-amount'); const noteIn = document.getElementById('pay-note');
+            let curAmt = parseInt(amtIn.value) || 0; let curNote = noteIn.value; const tag = `${ticker}(${date})`;
+            if (checkbox.checked) { curAmt += amount; curNote = !curNote ? `付: ${tag}` : (!curNote.includes(tag) ? `${curNote}, ${tag}` : curNote); }
+            else { curAmt -= amount; curNote = curNote.replace(`, ${tag}`, '').replace(`${tag}, `, '').replace(`付: ${tag}`, '付: ').replace('付: ,', '付: '); if(curNote.trim()==='付:') curNote=''; }
+            amtIn.value = curAmt > 0 ? curAmt : ''; noteIn.value = curNote;
+        }
         function clearChecks() {
-            document.querySelectorAll('#buy-checklist input[type="checkbox"]').forEach(c => c.checked = false);
-            document.getElementById('pay-amount').value = '';
-            document.getElementById('pay-note').value = '';
+            document.querySelectorAll('#buy-checklist input').forEach(c => c.checked = false);
+            document.getElementById('pay-amount').value = ''; document.getElementById('pay-note').value = '';
         }
 
-        // === 下面是標準功能 (保持不變) ===
-        function calculatePortfolio() {
-            const list = document.getElementById('portfolio-list'); list.innerHTML = '';
+        // === 其他通用功能 ===
+        function submitRequest() {
+            const d = {action:"add_request", date:document.getElementById('req-date').value, ticker:document.getElementById('req-ticker').value, type:document.getElementById('req-type').value, price:document.getElementById('req-price').value, shares:document.getElementById('req-shares').value};
+            if(!d.price||!d.shares) return alert("資料不全");
+            document.getElementById('btn-req').disabled=true;
+            fetch(GAS_URL, {method:"POST", body:JSON.stringify(d)}).then(res=>res.json()).then(()=>{ alert("✅ 已送出"); document.getElementById('btn-req').disabled=false; refreshData(); switchTab('pending','待辦'); });
+        }
+        function fetchPrice() {
+            const t = document.getElementById('req-ticker').value; const b = document.getElementById('btn-price');
+            if(!t) return; b.innerHTML='<span class="loader"></span>'; b.disabled=true;
+            fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"get_price", ticker:t})}).then(res=>res.json()).then(d=>{ 
+                if(d.status==='success' && !isNaN(parseFloat(d.price))) { document.getElementById('req-price').value=d.price; calcByShares(); }
+                b.disabled=false; b.innerText='🔍 抓現價'; 
+            });
+        }
+        function submitPayment() {
+            const v=document.getElementById('pay-amount').value; const n=document.getElementById('pay-note').value; if(!v) return;
+            fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"add_payment", date:document.getElementById('pay-date').value, amount:v, note:n||"APP"})}).then(()=>{ alert("✅ 已匯款"); clearChecks(); });
+        }
+        function calculatePortfolio() { /* 保持原樣... */ 
+             const list = document.getElementById('portfolio-list'); list.innerHTML = '';
             portfolio = {}; let totalRealizedPL = 0;
             const chronologicalRecords = [...globalData.records]; 
             chronologicalRecords.forEach(item => {
@@ -318,8 +359,8 @@
             }
             if (!hasStock) list.innerHTML = `<div class="text-center py-20 text-gray-300 bg-white rounded-2xl border border-dashed border-gray-200">無庫存持股</div>`;
         }
-        async function updateAllPrices() {
-            const btn = document.getElementById('btn-update-all'); btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
+        async function updateAllPrices() { /* 保持原樣... */ 
+             const btn = document.getElementById('btn-update-all'); btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
             let totalMarketValue = 0; let totalCostValue = 0;
             const tickers = Object.keys(portfolio).filter(t => portfolio[t].shares > 0);
             for (const ticker of tickers) {
@@ -345,17 +386,7 @@
             plLabel.className = `text-3xl font-bold font-mono tracking-tight ${totalPL>=0?'text-red-500':'text-green-500'}`;
             btn.disabled = false; btn.innerHTML = '🔄 更新';
         }
-        function fetchPrice() {
-            const ticker = document.getElementById('req-ticker').value; const btn = document.getElementById('btn-price'); const priceInput = document.getElementById('req-price');
-            if (!ticker) return alert("請輸入代號");
-            btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
-            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_price", ticker: ticker }) })
-            .then(res => res.json()).then(data => {
-                if(data.status==='success' && !isNaN(parseFloat(data.price))) { priceInput.value = data.price; calcByShares(); }
-                else { alert("查無資料"); } btn.disabled = false; btn.innerHTML = '🔍 抓現價';
-            }).catch(()=>{ btn.disabled=false; btn.innerHTML='🔍 抓現價'; });
-        }
-        function refreshData() {
+        function refreshData() { /* 保持原樣... */ 
             const ind = document.getElementById('status-indicator'); ind.innerText = "● 更新中"; ind.className="text-[10px] bg-yellow-50 border border-yellow-200 text-yellow-600 px-2 py-1 rounded font-mono";
             fetch(GAS_URL).then(res => res.json()).then(data => { 
                 globalData = data; 
@@ -363,22 +394,8 @@
                 ind.innerText = "● 已連線"; ind.className="text-[10px] bg-green-50 border border-green-200 text-green-600 px-2 py-1 rounded font-mono";
             }).catch(()=>{ ind.innerText = "❌ 離線"; ind.className="text-[10px] bg-red-50 border border-red-200 text-red-600 px-2 py-1 rounded font-mono"; });
         }
-        function renderPending() {
-            const list = document.getElementById('pending-list');
-            const badge = document.getElementById('badge-pending');
-            list.innerHTML = '';
-            if(!globalData.pending || globalData.pending.length===0){ badge.classList.add('hidden'); list.innerHTML=`<div class="text-center py-20 text-gray-300 bg-white rounded-2xl border border-dashed border-gray-200">無待辦事項</div>`; return; }
-            badge.classList.remove('hidden');
-            globalData.pending.forEach(item => {
-                const isBuy = item[4]==='buy';
-                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3 flex justify-between items-center transition hover:shadow-md">
-                    <div><div class="flex items-center gap-2 mb-1"><span class="px-2 py-0.5 rounded text-xs font-bold ${isBuy?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600'}">${isBuy?'買':'賣'}</span><span class="font-bold text-lg">${item[3]}</span></div><div class="text-xs text-gray-400">${item[6]}股 @ ${item[5]}</div></div>
-                    <button onclick="confirmItem('${item[0]}','${item[3]}','${item[4]}',${item[6]},${item[5]},'${item[2]}')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition">確認成交</button>
-                </div>`;
-            });
-        }
-        function renderRecords() {
-            const list = document.getElementById('record-list'); list.innerHTML = '';
+        function renderRecords() { /* 保持原樣... */ 
+             const list = document.getElementById('record-list'); list.innerHTML = '';
             [...globalData.records].reverse().forEach(item => {
                 const isBuy = item[3]==='buy';
                 list.innerHTML += `<div class="p-4 flex justify-between items-center hover:bg-gray-50 border-b border-gray-100 transition">
@@ -386,20 +403,6 @@
                     <div class="text-right"><div class="font-bold text-sm font-mono ${isBuy?'text-slate-800':'text-green-600'}">$${parseInt(item[6]).toLocaleString()}</div><div class="text-[10px] text-gray-400 font-mono">@${item[4]}</div></div>
                 </div>`;
             });
-        }
-        function submitRequest() {
-            const btn = document.getElementById('btn-req');
-            const d = {action:"add_request", date:document.getElementById('req-date').value, ticker:document.getElementById('req-ticker').value, type:document.getElementById('req-type').value, price:document.getElementById('req-price').value, shares:document.getElementById('req-shares').value};
-            if(!d.price||!d.shares) return alert("資料不全");
-            btn.disabled=true; fetch(GAS_URL, {method:"POST", body:JSON.stringify(d)}).then(res=>res.json()).then(()=>{ alert("✅ 已送出給朋友確認"); btn.disabled=false; refreshData(); switchTab('pending','待辦'); });
-        }
-        function confirmItem(id, ticker, type, shares, defPrice, date) {
-            const p = prompt(`確認 ${ticker} 成交價`, defPrice);
-            if(p) { fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"confirm_request", id, date, ticker, type, shares, price:parseFloat(p), amount:Math.round(p*shares)})}).then(()=>{ alert("🎉 成交確認"); refreshData(); switchTab('records','紀錄'); }); }
-        }
-        function submitPayment() {
-            const btn=document.getElementById('btn-pay'); const v=document.getElementById('pay-amount').value; const n=document.getElementById('pay-note').value; if(!v) return;
-            btn.disabled=true; fetch(GAS_URL, {method:"POST", body:JSON.stringify({action:"add_payment", date:document.getElementById('pay-date').value, amount:v, note:n||"APP"})}).then(()=>{ alert("✅ 匯款已登記"); btn.disabled=false; document.getElementById('pay-amount').value=''; document.getElementById('pay-note').value=''; clearChecks(); });
         }
     </script>
 </body>
