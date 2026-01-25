@@ -11,16 +11,16 @@
             margin-bottom: 30px; position: sticky; top: 10px; z-index: 1000;
             display: flex; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); align-items: center;
         }
-        label { font-size: 12px; color: #aaa; font-weight: bold; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 25px; width: 100%; max-width: 1400px; }
-        .card { background: #262626; padding: 15px; border-radius: 20px; border: 1px solid #333; }
+        .card { background: #262626; padding: 15px; border-radius: 20px; border: 1px solid #333; display: flex; flex-direction: column; }
         canvas { 
             width: 100%; height: auto; border-radius: 10px; cursor: move; touch-action: none;
             background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%);
             background-size: 20px 20px; border: 1px solid #444; margin-bottom: 10px;
         }
-        input, textarea { background: #111; color: white; border: 1px solid #444; padding: 8px; margin-top: 5px; border-radius: 5px; width: 100%; box-sizing: border-box; font-family: inherit; font-weight: bold; }
-        textarea { height: 50px; resize: none; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        input, textarea { background: #111; color: white; border: 1px solid #444; padding: 8px; border-radius: 5px; width: 100%; box-sizing: border-box; font-family: inherit; font-weight: bold; }
+        textarea { height: 45px; resize: none; }
         .btn-group { display: flex; gap: 8px; margin-top: 10px; }
         button { flex: 1; padding: 10px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .dl-btn { background: #444; color: white; }
@@ -30,9 +30,8 @@
 <body>
 
     <div class="global-controls">
-        <div><label>🌓 陰影</label><input type="range" id="gShadow" min="0" max="60" value="35" oninput="drawAll()"></div>
-        <div><label>🖋️ 外框</label><input type="range" id="gStroke" min="0" max="20" value="10" oninput="drawAll()"></div>
-        <div style="font-size: 12px; color: #ffde06;">● 每一格物件皆可獨立移動</div>
+        <div><label>🌓 陰影 </label><input type="range" id="gShadow" min="0" max="60" value="35" oninput="drawAll()"></div>
+        <div><label>🖋️ 外框 </label><input type="range" id="gStroke" min="0" max="25" value="12" oninput="drawAll()"></div>
     </div>
 
     <div id="weatherGrid" class="grid">正在抓取香港天文台數據...</div>
@@ -50,19 +49,19 @@
                 forecast.forEach((day, i) => {
                     const minT = typeof day.forecastMintemp === 'object' ? day.forecastMintemp.value : day.forecastMintemp;
                     const maxT = typeof day.forecastMaxtemp === 'object' ? day.forecastMaxtemp.value : day.forecastMaxtemp;
-                    const cleanWeather = day.forecastWeather.replace(/[，。、（）()]/g, ' ').trim();
+                    const cleanWeather = day.forecastWeather.replace(/[（）()]/g, '').trim();
 
                     items.push({
-                        date: { text: `${day.forecastDate.substring(4,6)}月${day.forecastDate.substring(6,8)}日 ${day.week}`, x: 80, y: 350, w: 500, h: 80 },
-                        temp: { text: `${minT} ${maxT} C`, x: 80, y: 550, w: 650, h: 180 },
-                        desc: { text: cleanWeather, x: 80, y: 650, w: 800, h: 100 },
-                        good: { text: "宜 帶安全帶", x: 80, y: 850, w: 600, h: 100, color: "#18d363" },
-                        bad: { text: "忌 貪污放上網", x: 80, y: 980, w: 750, h: 100, color: "#ff4444" },
+                        date: { text: `${day.forecastDate.substring(4,6)}月${day.forecastDate.substring(6,8)}日 ${day.week}`, x: 80, y: 150, w: 550, h: 80, size: 85, color: "white" },
+                        temp: { text: `${minT}°-${maxT}°C`, x: 80, y: 350, w: 650, h: 180, size: 220, color: "#ffde06" },
+                        desc: { text: cleanWeather, x: 80, y: 480, w: 850, h: 100, size: 70, color: "white" },
+                        good: { text: "宜：帶安全帶", x: 80, y: 750, w: 600, h: 120, size: 105, color: "#18d363" },
+                        bad: { text: "忌：貪污放上網", x: 80, y: 920, w: 750, h: 120, size: 105, color: "#ff4444" },
                         dragging: null, offset: { x: 0, y: 0 }
                     });
                 });
                 renderUI();
-            } catch (e) { console.error(e); }
+            } catch (e) { document.getElementById('weatherGrid').innerText = "數據載入失敗。"; }
         }
 
         function renderUI() {
@@ -73,9 +72,13 @@
                 card.className = 'card';
                 card.innerHTML = `
                     <canvas id="cvs-${i}" width="1080" height="1080"></canvas>
-                    <input type="text" value="${item.date.text}" oninput="items[${i}].date.text=this.value; draw(${i})">
-                    <input type="text" value="${item.temp.text}" oninput="items[${i}].temp.text=this.value; draw(${i})">
-                    <textarea oninput="items[${i}].desc.text=this.value; draw(${i})">${item.desc.text}</textarea>
+                    <div class="input-group">
+                        <input type="text" value="${item.date.text}" oninput="items[${i}].date.text=this.value; draw(${i})">
+                        <input type="text" value="${item.temp.text}" oninput="items[${i}].temp.text=this.value; draw(${i})">
+                        <textarea oninput="items[${i}].desc.text=this.value; draw(${i})">${item.desc.text}</textarea>
+                        <input type="text" value="${item.good.text}" style="color:#18d363" oninput="items[${i}].good.text=this.value; draw(${i})">
+                        <input type="text" value="${item.bad.text}" style="color:#ff4444" oninput="items[${i}].bad.text=this.value; draw(${i})">
+                    </div>
                     <div class="btn-group">
                         <button class="dl-btn" onclick="downloadPNG(${i})">下載 PNG</button>
                         <button class="pp-btn" onclick="openPhotopea(${i})">Photopea</button>
@@ -84,37 +87,42 @@
                 grid.appendChild(card);
                 setupDrag(i);
             });
-            setTimeout(drawAll, 500);
+            setTimeout(drawAll, 600);
         }
 
         function setupDrag(i) {
             const cvs = document.getElementById(`cvs-${i}`);
-            const state = items[i];
             cvs.onmousedown = (e) => {
                 const rect = cvs.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (1080 / rect.width);
                 const my = (e.clientY - rect.top) * (1080 / rect.height);
-                const targets = ['bad', 'good', 'desc', 'temp', 'date'];
-                for (let key of targets) {
-                    const o = state[key];
-                    if (mx >= o.x && mx <= o.x + o.w && my >= o.y - o.h && my <= o.y + 20) {
-                        state.dragging = key;
-                        state.offset.x = mx - o.x;
-                        state.offset.y = my - o.y;
+                const keys = ['bad', 'good', 'desc', 'temp', 'date'];
+                for (let key of keys) {
+                    const o = items[i][key];
+                    if (mx >= o.x - 20 && mx <= o.x + o.w && my >= o.y - o.h && my <= o.y + 20) {
+                        items[i].dragging = key;
+                        items[i].offset.x = mx - o.x;
+                        items[i].offset.y = my - o.y;
                         return;
                     }
                 }
             };
             window.addEventListener('mousemove', (e) => {
-                if (!state.dragging) return;
-                const rect = cvs.getBoundingClientRect();
+                const idx = items.findIndex(it => it.dragging !== null);
+                if (idx === -1) return;
+                const state = items[idx];
+                const activeCvs = document.getElementById(`cvs-${idx}`);
+                const rect = activeCvs.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (1080 / rect.width);
                 const my = (e.clientY - rect.top) * (1080 / rect.height);
                 state[state.dragging].x = mx - state.offset.x;
                 state[state.dragging].y = my - state.offset.y;
-                draw(i);
+                draw(idx);
             });
-            window.addEventListener('mouseup', () => { state.dragging = null; });
+            window.addEventListener('mouseup', () => {
+                items.forEach(it => it.dragging = null);
+                drawAll();
+            });
         }
 
         function draw(i) {
@@ -128,40 +136,39 @@
             ctx.clearRect(0, 0, 1080, 1080);
             ctx.textAlign = "left";
             ctx.lineJoin = "round";
-            ctx.shadowColor = "rgba(0,0,0,1)";
+            ctx.shadowColor = "black";
             ctx.shadowBlur = shadow;
             ctx.strokeStyle = "black";
             ctx.lineWidth = stroke;
 
-            // 繪製各項
-            const drawText = (obj, font, color) => {
-                ctx.font = font;
-                ctx.fillStyle = color;
-                const lines = obj.text.split(/[\n\s]+/);
-                lines.forEach((l, idx) => {
-                    const ty = obj.y + (idx * parseInt(font)*1.1);
-                    ctx.strokeText(l, obj.x, ty);
-                    ctx.fillText(l, obj.x, ty);
+            const render = (obj) => {
+                ctx.font = `900 ${obj.size}px 'Noto Sans TC'`;
+                ctx.fillStyle = obj.color;
+                const lines = obj.text.split('\n');
+                lines.forEach((line, idx) => {
+                    const ty = obj.y + (idx * obj.size * 1.1);
+                    ctx.strokeText(line, obj.x, ty);
+                    ctx.fillText(line, obj.x, ty);
                 });
             };
 
-            drawText(state.date, "900 80px 'Noto Sans TC'", "white");
-            drawText(state.temp, "900 200px 'Noto Sans TC'", "#ffde06");
-            drawText(state.desc, "900 65px 'Noto Sans TC'", "white");
-            drawText(state.good, "900 90px 'Noto Sans TC'", "#18d363");
-            drawText(state.bad, "900 90px 'Noto Sans TC'", "#ff4444");
+            render(state.date);
+            render(state.temp);
+            render(state.desc);
+            render(state.good);
+            render(state.bad);
 
             if (state.dragging) {
-                ctx.shadowBlur = 0; ctx.strokeStyle = "#0084ff"; ctx.lineWidth = 3;
+                ctx.shadowBlur = 0; ctx.strokeStyle = "#0084ff"; ctx.lineWidth = 4;
                 const o = state[state.dragging];
-                ctx.strokeRect(o.x - 5, o.y - o.h, o.w + 10, o.h + 20);
+                ctx.strokeRect(o.x - 10, o.y - o.h, o.w + 20, o.h + 40);
             }
         }
 
         function drawAll() { items.forEach((_, i) => draw(i)); }
         function downloadPNG(i) {
             const link = document.createElement('a');
-            link.download = `weather-safety-${i+1}.png`;
+            link.download = `HKO-Layer-${i+1}.png`;
             link.href = document.getElementById(`cvs-${i}`).toDataURL();
             link.click();
         }
