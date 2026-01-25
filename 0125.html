@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>7日天氣獨立編輯器</title>
+    <title>7日天氣獨立編輯器 - 極簡無標點版</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background: #1a1a1a; color: white; padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -13,16 +13,17 @@
         }
         label { font-size: 12px; color: #aaa; font-weight: bold; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; width: 100%; max-width: 1400px; }
-        .card { background: #262626; padding: 15px; border-radius: 20px; display: flex; flex-direction: column; }
+        .card { background: #262626; padding: 15px; border-radius: 20px; display: flex; flex-direction: column; border: 1px solid #333; }
         canvas { 
             width: 100%; height: auto; border-radius: 10px; cursor: move; touch-action: none;
             background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%);
-            background-size: 20px 20px; border: 1px solid #444;
+            background-size: 20px 20px; border: 1px solid #444; margin-bottom: 10px;
         }
         input[type="text"], textarea { 
             background: #111; color: white; border: 1px solid #444; padding: 8px; 
-            margin-top: 5px; border-radius: 5px; width: 100%; box-sizing: border-box; font-family: inherit;
+            margin-top: 5px; border-radius: 5px; width: 100%; box-sizing: border-box; font-family: inherit; font-weight: bold;
         }
+        textarea { height: 60px; resize: none; }
         .btn-group { display: flex; gap: 10px; margin-top: 10px; }
         button { flex: 1; padding: 10px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .dl-btn { background: #444; color: white; }
@@ -35,36 +36,38 @@
     <div class="global-controls">
         <div><label>🌓 陰影</label><input type="range" id="gShadow" min="0" max="60" value="30" oninput="drawAll()"></div>
         <div><label>🖋️ 外框</label><input type="range" id="gStroke" min="0" max="20" value="8" oninput="drawAll()"></div>
-        <div style="font-size: 12px; color: #0084ff;">● 每一格可獨立拖拽文字位置</div>
+        <div style="font-size: 12px; color: #0084ff;">● 獨立拖拽文字 ● 每一格配備 Photopea</div>
     </div>
 
-    <div id="weatherGrid" class="grid">正在抓取香港天文台數據...</div>
+    <div id="weatherGrid" class="grid">正在抓取天文台數據...</div>
 
     <script>
         const HKO_API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc';
-        let weatherData = [];
-        let items = []; // 儲存每一格的獨立狀態
+        let items = [];
 
         async function init() {
             try {
                 const res = await fetch(HKO_API);
                 const data = await res.json();
-                weatherData = data.weatherForecast.slice(0, 7);
+                const forecast = data.weatherForecast.slice(0, 7);
                 
-                weatherData.forEach((day, i) => {
+                forecast.forEach((day, i) => {
                     const minT = typeof day.forecastMintemp === 'object' ? day.forecastMintemp.value : day.forecastMintemp;
                     const maxT = typeof day.forecastMaxtemp === 'object' ? day.forecastMaxtemp.value : day.forecastMaxtemp;
                     
+                    // 移除標點與括號的邏輯
+                    const cleanWeather = day.forecastWeather.replace(/[，。、（）()]/g, ' ').trim();
+
                     items.push({
-                        date: { text: `${day.forecastDate.substring(4,6)}月${day.forecastDate.substring(6,8)}日 (${day.week})`, x: 80, y: 700, w: 450, h: 80 },
-                        temp: { text: `${minT}-${maxT}°C`, x: 80, y: 880, w: 600, h: 180 },
-                        desc: { text: day.forecastWeather, x: 80, y: 980, w: 800, h: 120 },
+                        date: { text: `${day.forecastDate.substring(4,6)}月${day.forecastDate.substring(6,8)}日 ${day.week}`, x: 80, y: 700, w: 450, h: 80 },
+                        temp: { text: `${minT} ${maxT} C`, x: 80, y: 880, w: 600, h: 180 },
+                        desc: { text: cleanWeather, x: 80, y: 980, w: 800, h: 120 },
                         dragging: null,
                         offset: { x: 0, y: 0 }
                     });
                 });
                 renderUI();
-            } catch (e) { alert("無法載入天文台數據，請檢查網路。"); }
+            } catch (e) { alert("數據載入失敗"); }
         }
 
         function renderUI() {
@@ -77,119 +80,4 @@
                     <canvas id="cvs-${i}" width="1080" height="1080"></canvas>
                     <input type="text" value="${item.date.text}" oninput="items[${i}].date.text=this.value; draw(${i})">
                     <input type="text" value="${item.temp.text}" style="color:#ffde06" oninput="items[${i}].temp.text=this.value; draw(${i})">
-                    <textarea oninput="items[${i}].desc.text=this.value; draw(${i})">${item.desc.text}</textarea>
-                    <div class="btn-group">
-                        <button class="dl-btn" onclick="downloadPNG(${i})">下載 PNG</button>
-                        <button class="pp-btn" onclick="openPhotopea(${i})">Photopea 合成</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-                setupInteractions(i);
-            });
-            setTimeout(drawAll, 500);
-        }
-
-        function setupInteractions(i) {
-            const cvs = document.getElementById(`cvs-${i}`);
-            const state = items[i];
-
-            cvs.onmousedown = (e) => {
-                const rect = cvs.getBoundingClientRect();
-                const mx = (e.clientX - rect.left) * (1080 / rect.width);
-                const my = (e.clientY - rect.top) * (1080 / rect.height);
-
-                // 碰撞檢測 (Hit Test)
-                const targets = ['desc', 'temp', 'date']; // 由下往上層檢查
-                for (let key of targets) {
-                    const obj = state[key];
-                    if (mx >= obj.x && mx <= obj.x + obj.w && my >= obj.y - obj.h && my <= obj.y + 20) {
-                        state.dragging = key;
-                        state.offset.x = mx - obj.x;
-                        state.offset.y = my - obj.y;
-                        return;
-                    }
-                }
-            };
-
-            window.addEventListener('mousemove', (e) => {
-                if (!state.dragging) return;
-                const rect = cvs.getBoundingClientRect();
-                const mx = (e.clientX - rect.left) * (1080 / rect.width);
-                const my = (e.clientY - rect.top) * (1080 / rect.height);
-                
-                state[state.dragging].x = mx - state.offset.x;
-                state[state.dragging].y = my - state.offset.y;
-                draw(i);
-            });
-
-            window.addEventListener('mouseup', () => { state.dragging = null; });
-        }
-
-        function draw(i) {
-            const canvas = document.getElementById(`cvs-${i}`);
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const state = items[i];
-            const shadow = document.getElementById('gShadow').value;
-            const stroke = document.getElementById('gStroke').value;
-
-            ctx.clearRect(0, 0, 1080, 1080);
-            ctx.textAlign = "left";
-            ctx.lineJoin = "round";
-            ctx.shadowColor = "rgba(0,0,0,0.8)";
-            ctx.shadowBlur = shadow;
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = stroke;
-
-            // 1. 日期
-            ctx.font = "900 80px 'Noto Sans TC'";
-            ctx.fillStyle = "white";
-            ctx.strokeText(state.date.text, state.date.x, state.date.y);
-            ctx.fillText(state.date.text, state.date.x, state.date.y);
-
-            // 2. 氣溫
-            ctx.font = "900 210px 'Noto Sans TC'";
-            ctx.fillStyle = "#ffde06";
-            ctx.strokeText(state.temp.text, state.temp.x, state.temp.y);
-            ctx.fillText(state.temp.text, state.temp.x, state.temp.y);
-
-            // 3. 天氣短句 (支援空白或Enter換行)
-            ctx.font = "900 60px 'Noto Sans TC'";
-            ctx.fillStyle = "white";
-            const lines = state.desc.text.replace(/ /g, '\n').split('\n');
-            lines.forEach((line, idx) => {
-                const ly = state.desc.y + (idx * 75);
-                ctx.strokeText(line, state.desc.x, ly);
-                ctx.fillText(line, state.desc.x, ly);
-            });
-
-            // 選中狀態框
-            if (state.dragging) {
-                ctx.shadowBlur = 0;
-                ctx.strokeStyle = "#0084ff";
-                ctx.lineWidth = 4;
-                const o = state[state.dragging];
-                ctx.strokeRect(o.x - 10, o.y - o.h, o.w + 20, o.h + 30);
-            }
-        }
-
-        function drawAll() { items.forEach((_, i) => draw(i)); }
-
-        function downloadPNG(i) {
-            const link = document.createElement('a');
-            link.download = `weather-day-${i+1}.png`;
-            link.href = document.getElementById(`cvs-${i}`).toDataURL();
-            link.click();
-        }
-
-        function openPhotopea(i) {
-            // 將畫布轉為 Base64 並開啟 Photopea 官網
-            // 提示用戶：請直接在 Photopea 內貼上(Ctrl+V) 或 拖入下載的 PNG
-            downloadPNG(i);
-            window.open("https://www.photopea.com", "_blank");
-        }
-
-        window.onload = init;
-    </script>
-</body>
-</html>
+                    <textarea oninput="items
