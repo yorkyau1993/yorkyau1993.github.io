@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>7日天氣獨立編輯器 - 極簡無標點版</title>
+    <title>7日天氣獨立編輯器</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background: #1a1a1a; color: white; padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -36,7 +36,6 @@
     <div class="global-controls">
         <div><label>🌓 陰影</label><input type="range" id="gShadow" min="0" max="60" value="30" oninput="drawAll()"></div>
         <div><label>🖋️ 外框</label><input type="range" id="gStroke" min="0" max="20" value="8" oninput="drawAll()"></div>
-        <div style="font-size: 12px; color: #0084ff;">● 獨立拖拽文字 ● 每一格配備 Photopea</div>
     </div>
 
     <div id="weatherGrid" class="grid">正在抓取天文台數據...</div>
@@ -55,7 +54,7 @@
                     const minT = typeof day.forecastMintemp === 'object' ? day.forecastMintemp.value : day.forecastMintemp;
                     const maxT = typeof day.forecastMaxtemp === 'object' ? day.forecastMaxtemp.value : day.forecastMaxtemp;
                     
-                    // 移除標點與括號的邏輯
+                    // 移除所有標點與括號
                     const cleanWeather = day.forecastWeather.replace(/[，。、（）()]/g, ' ').trim();
 
                     items.push({
@@ -80,4 +79,117 @@
                     <canvas id="cvs-${i}" width="1080" height="1080"></canvas>
                     <input type="text" value="${item.date.text}" oninput="items[${i}].date.text=this.value; draw(${i})">
                     <input type="text" value="${item.temp.text}" style="color:#ffde06" oninput="items[${i}].temp.text=this.value; draw(${i})">
-                    <textarea oninput="items
+                    <textarea oninput="items[${i}].desc.text=this.value; draw(${i})">${item.desc.text}</textarea>
+                    <div class="btn-group">
+                        <button class="dl-btn" onclick="downloadPNG(${i})">下載 PNG</button>
+                        <button class="pp-btn" onclick="openPhotopea(${i})">Photopea</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+                setupInteractions(i);
+            });
+            setTimeout(drawAll, 500);
+        }
+
+        function setupInteractions(i) {
+            const cvs = document.getElementById(`cvs-${i}`);
+            const state = items[i];
+
+            cvs.onmousedown = (e) => {
+                const rect = cvs.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) * (1080 / rect.width);
+                const my = (e.clientY - rect.top) * (1080 / rect.height);
+                const targets = ['desc', 'temp', 'date'];
+                for (let key of targets) {
+                    const obj = state[key];
+                    if (mx >= obj.x && mx <= obj.x + obj.w && my >= obj.y - obj.h && my <= obj.y + 20) {
+                        state.dragging = key;
+                        state.offset.x = mx - obj.x;
+                        state.offset.y = my - obj.y;
+                        return;
+                    }
+                }
+            };
+
+            window.addEventListener('mousemove', (e) => {
+                if (!state.dragging) return;
+                // 找到觸發事件的 canvas
+                const currentCvs = document.getElementById(`cvs-${i}`);
+                const rect = currentCvs.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) * (1080 / rect.width);
+                const my = (e.clientY - rect.top) * (1080 / rect.height);
+                
+                state[state.dragging].x = mx - state.offset.x;
+                state[state.dragging].y = my - state.offset.y;
+                draw(i);
+            });
+
+            window.addEventListener('mouseup', () => { state.dragging = null; });
+        }
+
+        function draw(i) {
+            const canvas = document.getElementById(`cvs-${i}`);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const state = items[i];
+            const shadow = document.getElementById('gShadow').value;
+            const stroke = document.getElementById('gStroke').value;
+
+            ctx.clearRect(0, 0, 1080, 1080);
+            ctx.textAlign = "left";
+            ctx.lineJoin = "round";
+            ctx.shadowColor = "rgba(0,0,0,0.9)";
+            ctx.shadowBlur = shadow;
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = stroke;
+
+            // 1. 日期 (思源黑體)
+            ctx.font = "900 85px 'Noto Sans TC'";
+            ctx.fillStyle = "white";
+            ctx.strokeText(state.date.text, state.date.x, state.date.y);
+            ctx.fillText(state.date.text, state.date.x, state.date.y);
+
+            // 2. 氣溫
+            ctx.font = "900 220px 'Noto Sans TC'";
+            ctx.fillStyle = "#ffde06";
+            ctx.strokeText(state.temp.text, state.temp.x, state.temp.y);
+            ctx.fillText(state.temp.text, state.temp.x, state.temp.y);
+
+            // 3. 天氣 (空白鍵換行)
+            ctx.font = "900 65px 'Noto Sans TC'";
+            ctx.fillStyle = "white";
+            const lines = state.desc.text.split(/[\n\s]+/); 
+            lines.forEach((line, idx) => {
+                const ly = state.desc.y + (idx * 80);
+                ctx.strokeText(line, state.desc.x, ly);
+                ctx.fillText(line, state.desc.x, ly);
+            });
+
+            // 選中提示
+            if (state.dragging) {
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = "#0084ff";
+                ctx.lineWidth = 3;
+                const o = state[state.dragging];
+                ctx.strokeRect(o.x - 5, o.y - o.h, o.w + 10, o.h + 20);
+            }
+        }
+
+        function drawAll() { items.forEach((_, i) => draw(i)); }
+
+        function downloadPNG(i) {
+            const link = document.createElement('a');
+            link.download = `weather-layer-${i+1}.png`;
+            link.href = document.getElementById(`cvs-${i}`).toDataURL();
+            link.click();
+        }
+
+        function openPhotopea(i) {
+            downloadPNG(i);
+            window.open("https://www.photopea.com", "_blank");
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
