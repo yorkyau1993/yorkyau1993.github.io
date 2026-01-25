@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>7日批量天氣編輯器 - 獨立移動版</title>
+    <title>7日天氣編輯器 - 精確移動版</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
@@ -18,32 +18,17 @@
         textarea { height: 60px; resize: none; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; width: 100%; max-width: 1200px; }
         .card { background: #262626; padding: 15px; border-radius: 15px; text-align: center; }
-        canvas { 
-            width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px; cursor: crosshair;
-            background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%);
-            background-size: 20px 20px;
-        }
+        canvas { width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px; cursor: crosshair; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; }
         .dl-btn { background: #0084ff; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <div class="full-width">
-            <label>🖼️ 1. 統一底圖：</label>
-            <input type="file" id="bgInput" onchange="handleBg(this)">
-        </div>
-        <div>
-            <label>🌗 陰影：</label>
-            <input type="range" id="shadowIn" min="0" max="60" value="30" oninput="drawAll()">
-        </div>
-        <div>
-            <label>🖋️ 外框：</label>
-            <input type="range" id="strokeIn" min="0" max="20" value="8" oninput="drawAll()">
-        </div>
-        <div class="full-width">
-            <label>💡 拖拽：滑鼠點擊圖片上的文字即可單獨移動該文字框。Enter/空格換行。</label>
-        </div>
+        <div class="full-width"><label>📡 數據來源：香港天文台 (HKO)</label></div>
+        <div><label>🌗 陰影：</label><input type="range" id="shadowIn" min="0" max="60" value="30" oninput="drawAll()"></div>
+        <div><label>🖋️ 外框：</label><input type="range" id="strokeIn" min="0" max="20" value="8" oninput="drawAll()"></div>
+        <button class="full-width" onclick="window.open('https://www.photopea.com')" style="background:#18d363; color:black;">開啟 Photopea 合成</button>
     </div>
 
     <div id="weatherGrid" class="grid">讀取中...</div>
@@ -51,15 +36,13 @@
     <script>
         const API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc';
         let forecasts = [];
-        let bgImg = null;
-        
-        // 儲存三個物件的位置
         let positions = {
-            date: { x: 80, y: 700 },
-            temp: { x: 80, y: 880 },
-            weather: { x: 80, y: 980 }
+            date: { x: 80, y: 250, w: 400, h: 80 },
+            temp: { x: 80, y: 500, w: 600, h: 200 },
+            weather: { x: 80, y: 750, w: 800, h: 150 }
         };
-        let selectedObj = null;
+        let dragging = null;
+        let offset = { x: 0, y: 0 };
 
         async function init() {
             try {
@@ -83,53 +66,52 @@
                         <input type="text" id="temp-${i}" value="${getT(day.forecastMintemp)}-${getT(day.forecastMaxtemp)}°C" oninput="drawAll()" style="color:#ffde06">
                         <textarea id="weather-${i}" oninput="drawAll()">${day.forecastWeather}</textarea>
                     </div>
-                    <button class="dl-btn" onclick="download(${i}, '${day.forecastDate}')">下載 PNG</button>
+                    <button class="dl-btn" onclick="download(${i}, '${day.forecastDate}')">下載透明圖層</button>
                 `;
                 grid.appendChild(card);
-                attachEvents(`canvas-${i}`);
+                attachDrag(`canvas-${i}`);
             });
             setTimeout(drawAll, 600);
         }
 
         function getT(t) { return typeof t === 'object' ? t.value : t; }
 
-        function attachEvents(id) {
+        function attachDrag(id) {
             const cvs = document.getElementById(id);
             cvs.onmousedown = (e) => {
                 const rect = cvs.getBoundingClientRect();
                 const mouseX = (e.clientX - rect.left) * (1080 / rect.width);
                 const mouseY = (e.clientY - rect.top) * (1080 / rect.height);
                 
-                // 碰撞檢測：判斷滑鼠點到哪個框
-                if (mouseY > positions.weather.y - 100) selectedObj = 'weather';
-                else if (mouseY > positions.temp.y - 150) selectedObj = 'temp';
-                else selectedObj = 'date';
+                // 檢查點到了哪一個物件
+                for (let key in positions) {
+                    let p = positions[key];
+                    if (mouseX >= p.x && mouseX <= p.x + p.w && mouseY >= p.y - p.h && mouseY <= p.y) {
+                        dragging = key;
+                        offset.x = mouseX - p.x;
+                        offset.y = mouseY - p.y;
+                        break;
+                    }
+                }
             };
             window.onmousemove = (e) => {
-                if (!selectedObj) return;
+                if (!dragging) return;
                 const cvs0 = document.getElementById('canvas-0');
                 const rect = cvs0.getBoundingClientRect();
-                positions[selectedObj].x = (e.clientX - rect.left) * (1080 / rect.width);
-                positions[selectedObj].y = (e.clientY - rect.top) * (1080 / rect.height);
+                const mouseX = (e.clientX - rect.left) * (1080 / rect.width);
+                const mouseY = (e.clientY - rect.top) * (1080 / rect.height);
+                
+                positions[dragging].x = mouseX - offset.x;
+                positions[dragging].y = mouseY - offset.y;
                 drawAll();
             };
-            window.onmouseup = () => { selectedObj = null; };
-        }
-
-        function handleBg(input) {
-            const reader = new FileReader();
-            reader.onload = e => { bgImg = new Image(); bgImg.onload = () => drawAll(); bgImg.src = e.target.result; };
-            reader.readAsDataURL(input.files[0]);
+            window.onmouseup = () => { dragging = null; };
         }
 
         function drawAll() {
             forecasts.forEach((_, i) => {
                 const ctx = document.getElementById(`canvas-${i}`).getContext('2d');
                 ctx.clearRect(0, 0, 1080, 1080);
-                if (bgImg) {
-                    const s = Math.max(1080/bgImg.width, 1080/bgImg.height);
-                    ctx.drawImage(bgImg, (1080-bgImg.width*s)/2, (1080-bgImg.height*s)/2, bgImg.width*s, bgImg.height*s);
-                }
 
                 ctx.textAlign = "left";
                 ctx.shadowColor = "black";
@@ -138,41 +120,46 @@
                 ctx.lineWidth = document.getElementById('strokeIn').value;
                 ctx.lineJoin = "round";
 
-                // 1. 日期
+                // 繪製日期
                 ctx.fillStyle = "white";
-                ctx.font = "900 75px 'Noto Sans TC'";
+                ctx.font = "900 80px 'Noto Sans TC'";
                 const date = document.getElementById(`date-${i}`).value;
                 ctx.strokeText(date, positions.date.x, positions.date.y);
                 ctx.fillText(date, positions.date.x, positions.date.y);
 
-                // 2. 氣溫
+                // 繪製氣溫
                 ctx.fillStyle = "#ffde06";
-                ctx.font = "900 190px 'Noto Sans TC'";
+                ctx.font = "900 220px 'Noto Sans TC'";
                 const temp = document.getElementById(`temp-${i}`).value;
                 ctx.strokeText(temp, positions.temp.x, positions.temp.y);
                 ctx.fillText(temp, positions.temp.x, positions.temp.y);
 
-                // 3. 天氣 (換行處理)
+                // 繪製天氣 (換行處理)
                 ctx.fillStyle = "white";
-                ctx.font = "900 55px 'Noto Sans TC'";
+                ctx.font = "900 65px 'Noto Sans TC'";
                 const weather = "(" + document.getElementById(`weather-${i}`).value.replace(/ /g, '\n') + ")";
-                const lines = weather.split('\n');
-                lines.forEach((line, index) => {
-                    const ly = positions.weather.y + (index * 65);
-                    ctx.strokeText(line, positions.weather.x, ly);
-                    ctx.fillText(line, positions.weather.x, ly);
+                weather.split('\n').forEach((line, index) => {
+                    ctx.strokeText(line, positions.weather.x, positions.weather.y + (index * 80));
+                    ctx.fillText(line, positions.weather.x, positions.weather.y + (index * 80));
                 });
+
+                // 預覽時畫出選中框 (幫助定位)
+                if (dragging) {
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = "#0084ff";
+                    ctx.lineWidth = 2;
+                    let p = positions[dragging];
+                    ctx.strokeRect(p.x, p.y - p.h, p.w, p.h + 50);
+                }
             });
         }
 
         function download(index, date) {
             const cvs = document.getElementById(`canvas-${index}`);
-            const tempBg = bgImg; bgImg = null; drawAll();
             const link = document.createElement('a');
-            link.download = `weather-${date}.png`;
+            link.download = `weather-overlay-${date}.png`;
             link.href = cvs.toDataURL();
             link.click();
-            bgImg = tempBg; drawAll();
         }
 
         window.onload = init;
