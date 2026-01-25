@@ -2,150 +2,175 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>天氣 Overlay 進階編輯器</title>
+    <title>7日批量天氣編輯器 - 進階版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .controls { background: #333; padding: 20px; border-radius: 12px; margin-bottom: 20px; width: 100%; max-width: 600px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
-        .full-width { grid-column: span 2; }
-        label { font-size: 12px; color: #aaa; }
-        input, select { padding: 8px; border-radius: 4px; border: none; background: #222; color: white; width: 90%; margin-top: 5px; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .controls { 
+            background: #333; padding: 20px; border-radius: 12px; 
+            margin-bottom: 30px; width: 100%; max-width: 900px; 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; 
+            position: sticky; top: 10px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .full-width { grid-column: span 3; }
+        label { font-size: 12px; color: #aaa; font-weight: bold; }
+        input, select, textarea { padding: 10px; border-radius: 6px; border: none; background: #222; color: white; width: 100%; box-sizing: border-box; margin-top: 5px; font-family: inherit; }
+        textarea { height: 60px; resize: none; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; width: 100%; max-width: 1200px; }
+        .card { background: #262626; padding: 15px; border-radius: 15px; text-align: center; }
         canvas { 
-            width: 100%; max-width: 500px; height: auto; border-radius: 12px;
-            background-image: linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+            width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px; cursor: move;
+            background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%);
             background-size: 20px 20px;
         }
-        button { grid-column: span 2; padding: 12px; background: #0084ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .dl-btn { background: #0084ff; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <div class="full-width">
-            <label>🖼️ 背景預覽：</label>
+            <label>🖼️ 1. 統一底圖預覽：</label>
             <input type="file" id="bgInput" onchange="handleBg(this)">
         </div>
         <div>
-            <label>📅 日期：</label>
-            <input type="text" id="dateText" oninput="draw()">
+            <label>🌗 陰影模糊：</label>
+            <input type="range" id="shadowIn" min="0" max="60" value="30" oninput="drawAll()">
         </div>
         <div>
-            <label>🌡️ 氣溫：</label>
-            <input type="text" id="tempText" oninput="draw()">
+            <label>🖋️ 外框粗細：</label>
+            <input type="range" id="strokeIn" min="0" max="20" value="8" oninput="drawAll()">
+        </div>
+        <div>
+            <label>📏 字體縮放 (%)：</label>
+            <input type="range" id="sizeScale" min="50" max="150" value="100" oninput="drawAll()">
         </div>
         <div class="full-width">
-            <label>☁️ 天氣描述 (支持 \n 換行)：</label>
-            <input type="text" id="weatherText" oninput="draw()">
+            <label>💡 提示：在圖片上「直接拖拽」文字可移動位置。在文字框內按「Enter」或「空白」即可換行。</label>
         </div>
-        <div>
-            <label>🎨 字體：</label>
-            <select id="fontSelect" onchange="draw()">
-                <option value="Arial">Arial (系統預設)</option>
-                <option value="'PingFang HK', sans-serif">苹方 (Mac/iOS)</option>
-                <option value="'Microsoft JhengHei', sans-serif">微軟正黑體</option>
-                <option value="Impact">Impact (粗曠風格)</option>
-            </select>
-        </div>
-        <div>
-            <label>🌗 陰影強度：</label>
-            <input type="range" id="shadowIn" min="0" max="50" value="25" oninput="draw()">
-        </div>
-        <button onclick="download()">下載透明圖層 (PNG)</button>
     </div>
 
-    <canvas id="canvas" width="1080" height="1080"></canvas>
+    <div class="grid" id="weatherGrid">讀取中...</div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc';
+        let forecasts = [];
         let bgImg = null;
+        let textPos = { x: 80, y: 1000 }; // 初始左下角位置
 
         async function init() {
             try {
-                const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
+                const res = await fetch(API);
                 const data = await res.json();
-                const today = data.weatherForecast[0];
-                
-                document.getElementById('dateText').value = `${today.forecastDate.substring(4,6)}月${today.forecastDate.substring(6,8)}日 (${today.week})`;
-                const minT = typeof today.forecastMintemp === 'object' ? today.forecastMintemp.value : today.forecastMintemp;
-                const maxT = typeof today.forecastMaxtemp === 'object' ? today.forecastMaxtemp.value : today.forecastMaxtemp;
-                document.getElementById('tempText').value = `${minT}°-${maxT}°C`;
-                document.getElementById('weatherText').value = `(${today.forecastWeather})`;
-                
-                draw();
-            } catch (e) { console.error("API Error"); }
+                forecasts = data.weatherForecast.slice(0, 7);
+                createCanvases();
+            } catch (e) { console.error(e); }
+        }
+
+        function createCanvases() {
+            const grid = document.getElementById('weatherGrid');
+            grid.innerHTML = '';
+            forecasts.forEach((day, i) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <canvas id="canvas-${i}" width="1080" height="1080"></canvas>
+                    <div>
+                        <input type="text" id="date-${i}" value="${day.forecastDate.substring(4,6)}月${day.forecastDate.substring(6,8)}日 (${day.week})" oninput="drawAll()">
+                        <input type="text" id="temp-${i}" value="${getT(day.forecastMintemp)}-${getT(day.forecastMaxtemp)}°C" oninput="drawAll()" style="color:#ffde06">
+                        <textarea id="weather-${i}" oninput="drawAll()">${day.forecastWeather}</textarea>
+                    </div>
+                    <button class="dl-btn" onclick="download(${i}, '${day.forecastDate}')">下載 PNG</button>
+                `;
+                grid.appendChild(card);
+                setupDrag(`canvas-${i}`);
+            });
+            setTimeout(drawAll, 500); // 等待字體載入
+        }
+
+        function getT(t) { return typeof t === 'object' ? t.value : t; }
+
+        function setupDrag(id) {
+            const cvs = document.getElementById(id);
+            let isDragging = false;
+            const handleMove = (e) => {
+                if (!isDragging) return;
+                const rect = cvs.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                textPos.x = (clientX - rect.left) * (1080 / rect.width);
+                textPos.y = (clientY - rect.top) * (1080 / rect.height);
+                drawAll();
+            };
+            cvs.onmousedown = cvs.ontouchstart = () => isDragging = true;
+            window.onmouseup = window.ontouchend = () => isDragging = false;
+            cvs.onmousemove = cvs.ontouchmove = handleMove;
         }
 
         function handleBg(input) {
             const reader = new FileReader();
-            reader.onload = e => {
-                bgImg = new Image();
-                bgImg.onload = () => draw();
-                bgImg.src = e.target.result;
-            };
+            reader.onload = e => { bgImg = new Image(); bgImg.onload = () => drawAll(); bgImg.src = e.target.result; };
             reader.readAsDataURL(input.files[0]);
         }
 
-        function wrapText(text, x, y, lineHeight) {
-            const lines = text.split('\\n');
-            lines.forEach((line, i) => {
-                // 先畫外框再畫填色，框才不會吃掉字體
-                ctx.strokeText(line, x, y + (i * lineHeight));
-                ctx.fillText(line, x, y + (i * lineHeight));
+        function drawAll() {
+            const scale = document.getElementById('sizeScale').value / 100;
+            forecasts.forEach((_, i) => {
+                const ctx = document.getElementById(`canvas-${i}`).getContext('2d');
+                ctx.clearRect(0, 0, 1080, 1080);
+                if (bgImg) {
+                    const s = Math.max(1080/bgImg.width, 1080/bgImg.height);
+                    ctx.drawImage(bgImg, (1080-bgImg.width*s)/2, (1080-bgImg.height*s)/2, bgImg.width*s, bgImg.height*s);
+                }
+
+                ctx.textAlign = "left";
+                ctx.shadowColor = "black";
+                ctx.shadowBlur = document.getElementById('shadowIn').value;
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = document.getElementById('strokeIn').value;
+                ctx.lineJoin = "round";
+
+                // 繪製順序：從下往上
+                let currentY = textPos.y;
+                
+                // 天氣短句 (下)
+                const weather = "(" + document.getElementById(`weather-${i}`).value.replace(/ /g, '\n') + ")";
+                ctx.fillStyle = "white";
+                ctx.font = `900 ${55 * scale}px 'Noto Sans TC'`;
+                const wLines = weather.split('\n');
+                wLines.reverse().forEach(line => {
+                    ctx.strokeText(line, textPos.x, currentY);
+                    ctx.fillText(line, textPos.x, currentY);
+                    currentY -= 65 * scale;
+                });
+
+                // 氣溫 (中)
+                ctx.fillStyle = "#ffde06";
+                ctx.font = `900 ${190 * scale}px 'Noto Sans TC'`;
+                const temp = document.getElementById(`temp-${i}`).value;
+                currentY -= 30 * scale;
+                ctx.strokeText(temp, textPos.x, currentY);
+                ctx.fillText(temp, textPos.x, currentY);
+
+                // 日期 (上)
+                ctx.fillStyle = "white";
+                ctx.font = `900 ${75 * scale}px 'Noto Sans TC'`;
+                const date = document.getElementById(`date-${i}`).value;
+                currentY -= 150 * scale;
+                ctx.strokeText(date, textPos.x, currentY);
+                ctx.fillText(date, textPos.x, currentY);
             });
         }
 
-        function draw() {
-            ctx.clearRect(0, 0, 1080, 1080);
-            if (bgImg) {
-                const scale = Math.max(canvas.width / bgImg.width, canvas.height / bgImg.height);
-                ctx.drawImage(bgImg, (canvas.width - bgImg.width * scale) / 2, (canvas.height - bgImg.height * scale) / 2, bgImg.width * scale, bgImg.height * scale);
-            }
-
-            const font = document.getElementById('fontSelect').value;
-            const shadow = document.getElementById('shadowIn').value;
-            
-            ctx.textAlign = "left";
-            ctx.textBaseline = "bottom";
-            ctx.shadowColor = "rgba(0,0,0,0.8)";
-            ctx.shadowBlur = shadow;
-            
-            // 外框設定 (Stroke)
-            ctx.strokeStyle = "rgba(0,0,0,0.5)";
-            ctx.lineWidth = 6;
-
-            const mLeft = 80;
-            const mBottom = 80;
-
-            // 1. 天氣 (底行) - 支援換行
-            ctx.fillStyle = "white";
-            ctx.font = `bold 60px ${font}`;
-            wrapText(document.getElementById('weatherText').value, mLeft, 1000 - mBottom, 75);
-
-            // 2. 氣溫 (中)
-            ctx.fillStyle = "#ffde06";
-            ctx.font = `900 180px ${font}`;
-            const temp = document.getElementById('tempText').value;
-            ctx.strokeText(temp, mLeft - 5, 830 - mBottom);
-            ctx.fillText(temp, mLeft - 5, 830 - mBottom);
-
-            // 3. 日期 (上)
-            ctx.fillStyle = "white";
-            ctx.font = `bold 75px ${font}`;
-            const date = document.getElementById('dateText').value;
-            ctx.strokeText(date, mLeft, 640 - mBottom);
-            ctx.fillText(date, mLeft, 640 - mBottom);
-        }
-
-        function download() {
-            const originalBg = bgImg;
-            bgImg = null;
-            draw();
+        function download(index, date) {
+            const cvs = document.getElementById(`canvas-${index}`);
+            const tempBg = bgImg; bgImg = null; drawAll();
             const link = document.createElement('a');
-            link.download = `weather-overlay.png`;
-            link.href = canvas.toDataURL();
+            link.download = `weather-${date}.png`;
+            link.href = cvs.toDataURL();
             link.click();
-            bgImg = originalBg;
-            draw();
+            bgImg = tempBg; drawAll();
         }
 
         window.onload = init;
