@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <title>天氣 Overlay 進階編輯器</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .controls { background: #333; padding: 20px; border-radius: 12px; margin-bottom: 20px; width: 100%; max-width: 600px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
+        .full-width { grid-column: span 2; }
+        label { font-size: 12px; color: #aaa; }
+        input, select { padding: 8px; border-radius: 4px; border: none; background: #222; color: white; width: 90%; margin-top: 5px; }
+        canvas { 
+            width: 100%; max-width: 500px; height: auto; border-radius: 12px;
+            background-image: linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+            background-size: 20px 20px;
+        }
+        button { grid-column: span 2; padding: 12px; background: #0084ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div class="full-width">
+            <label>🖼️ 背景預覽：</label>
+            <input type="file" id="bgInput" onchange="handleBg(this)">
+        </div>
+        <div>
+            <label>📅 日期：</label>
+            <input type="text" id="dateText" oninput="draw()">
+        </div>
+        <div>
+            <label>🌡️ 氣溫：</label>
+            <input type="text" id="tempText" oninput="draw()">
+        </div>
+        <div class="full-width">
+            <label>☁️ 天氣描述 (支持 \n 換行)：</label>
+            <input type="text" id="weatherText" oninput="draw()">
+        </div>
+        <div>
+            <label>🎨 字體：</label>
+            <select id="fontSelect" onchange="draw()">
+                <option value="Arial">Arial (系統預設)</option>
+                <option value="'PingFang HK', sans-serif">苹方 (Mac/iOS)</option>
+                <option value="'Microsoft JhengHei', sans-serif">微軟正黑體</option>
+                <option value="Impact">Impact (粗曠風格)</option>
+            </select>
+        </div>
+        <div>
+            <label>🌗 陰影強度：</label>
+            <input type="range" id="shadowIn" min="0" max="50" value="25" oninput="draw()">
+        </div>
+        <button onclick="download()">下載透明圖層 (PNG)</button>
+    </div>
+
+    <canvas id="canvas" width="1080" height="1080"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let bgImg = null;
+
+        async function init() {
+            try {
+                const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
+                const data = await res.json();
+                const today = data.weatherForecast[0];
+                
+                document.getElementById('dateText').value = `${today.forecastDate.substring(4,6)}月${today.forecastDate.substring(6,8)}日 (${today.week})`;
+                const minT = typeof today.forecastMintemp === 'object' ? today.forecastMintemp.value : today.forecastMintemp;
+                const maxT = typeof today.forecastMaxtemp === 'object' ? today.forecastMaxtemp.value : today.forecastMaxtemp;
+                document.getElementById('tempText').value = `${minT}°-${maxT}°C`;
+                document.getElementById('weatherText').value = `(${today.forecastWeather})`;
+                
+                draw();
+            } catch (e) { console.error("API Error"); }
+        }
+
+        function handleBg(input) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                bgImg = new Image();
+                bgImg.onload = () => draw();
+                bgImg.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function wrapText(text, x, y, lineHeight) {
+            const lines = text.split('\\n');
+            lines.forEach((line, i) => {
+                // 先畫外框再畫填色，框才不會吃掉字體
+                ctx.strokeText(line, x, y + (i * lineHeight));
+                ctx.fillText(line, x, y + (i * lineHeight));
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, 1080, 1080);
+            if (bgImg) {
+                const scale = Math.max(canvas.width / bgImg.width, canvas.height / bgImg.height);
+                ctx.drawImage(bgImg, (canvas.width - bgImg.width * scale) / 2, (canvas.height - bgImg.height * scale) / 2, bgImg.width * scale, bgImg.height * scale);
+            }
+
+            const font = document.getElementById('fontSelect').value;
+            const shadow = document.getElementById('shadowIn').value;
+            
+            ctx.textAlign = "left";
+            ctx.textBaseline = "bottom";
+            ctx.shadowColor = "rgba(0,0,0,0.8)";
+            ctx.shadowBlur = shadow;
+            
+            // 外框設定 (Stroke)
+            ctx.strokeStyle = "rgba(0,0,0,0.5)";
+            ctx.lineWidth = 6;
+
+            const mLeft = 80;
+            const mBottom = 80;
+
+            // 1. 天氣 (底行) - 支援換行
+            ctx.fillStyle = "white";
+            ctx.font = `bold 60px ${font}`;
+            wrapText(document.getElementById('weatherText').value, mLeft, 1000 - mBottom, 75);
+
+            // 2. 氣溫 (中)
+            ctx.fillStyle = "#ffde06";
+            ctx.font = `900 180px ${font}`;
+            const temp = document.getElementById('tempText').value;
+            ctx.strokeText(temp, mLeft - 5, 830 - mBottom);
+            ctx.fillText(temp, mLeft - 5, 830 - mBottom);
+
+            // 3. 日期 (上)
+            ctx.fillStyle = "white";
+            ctx.font = `bold 75px ${font}`;
+            const date = document.getElementById('dateText').value;
+            ctx.strokeText(date, mLeft, 640 - mBottom);
+            ctx.fillText(date, mLeft, 640 - mBottom);
+        }
+
+        function download() {
+            const originalBg = bgImg;
+            bgImg = null;
+            draw();
+            const link = document.createElement('a');
+            link.download = `weather-overlay.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            bgImg = originalBg;
+            draw();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
