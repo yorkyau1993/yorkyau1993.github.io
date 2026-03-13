@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人存款紀錄系統</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; max-width: 500px; margin: auto; background-color: #f9f9f9;}
+        .box { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;}
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        .balance { font-size: 28px; color: #27ae60; text-align: center; font-weight: bold; margin-bottom: 20px; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px;}
+        button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #34495e; }
+        
+        /* 查帳表格樣式 */
+        .table-container { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 400px;}
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background-color: #f1f1f1; color: #555; position: sticky; top: 0;}
+        .action-in { color: #27ae60; font-weight: bold; }
+        .action-out { color: #e74c3c; font-weight: bold; }
+        
+        /* 區塊隱藏控制 */
+        #appContainer { display: none; }
+        #errorMsg { color: red; text-align: center; display: none; margin-top: 10px; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<div class="box" id="loginContainer">
+    <h2>🔒 系統登入</h2>
+    <input type="password" id="sysPassword" placeholder="請輸入通行密碼">
+    <button id="loginBtn">登入</button>
+    <div id="errorMsg">密碼錯誤，請重試！</div>
+</div>
+
+<div id="appContainer">
+    <div class="box">
+        <h2>🏦 我的專屬帳本</h2>
+        <div class="balance" id="displayBalance">讀取中...</div>
+
+        <form id="recordForm">
+            <label>動作：</label>
+            <select id="action" name="action">
+                <option value="存入">存入 (增加水位)</option>
+                <option value="取出">取出 (減少水位)</option>
+            </select>
+
+            <label>金額：</label>
+            <input type="number" id="amount" name="amount" required min="1" placeholder="輸入金額">
+
+            <label>備註 (對帳用，建議必填)：</label>
+            <input type="text" id="note" name="note" placeholder="例：轉帳後五碼、代墊款項">
+
+            <button type="submit" id="submitBtn">新增紀錄</button>
+        </form>
+    </div>
+
+    <div class="box">
+        <h2>📜 歷史明細 (查帳)</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>時間</th>
+                        <th>動作</th>
+                        <th>金額</th>
+                        <th>結餘</th>
+                        <th>備註</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr><td colspan="5" style="text-align:center;">載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ⚠️ 替換成你重新部署後的 Web App URL
+    const GAS_URL = "你的_WEB_APP_URL_貼在這裡";
+    let userPassword = ""; // 暫存使用者輸入的密碼
+
+    // 登入按鈕事件
+    document.getElementById('loginBtn').addEventListener('click', function() {
+        const pwdInput = document.getElementById('sysPassword').value;
+        if(!pwdInput) return alert("請輸入密碼！");
+        
+        this.innerText = "驗證中...";
+        this.disabled = true;
+        document.getElementById('errorMsg').style.display = "none";
+
+        // 發送帶有密碼的請求去後端驗證
+        fetch(GAS_URL + "?pwd=" + encodeURIComponent(pwdInput))
+            .then(response => response.json())
+            .then(data => {
+                if (data.error === "Wrong Password") {
+                    document.getElementById('errorMsg').style.display = "block";
+                    this.innerText = "登入";
+                    this.disabled = false;
+                } else {
+                    // 密碼正確，儲存密碼並顯示介面
+                    userPassword = pwdInput;
+                    document.getElementById('loginContainer').style.display = "none";
+                    document.getElementById('appContainer').style.display = "block";
+                    renderData(data); // 直接用剛剛抓回來的資料渲染畫面
+                }
+            })
+            .catch(error => {
+                alert("網路錯誤，請重試");
+                this.innerText = "登入";
+                this.disabled = false;
+            });
+    });
+
+    // 渲染資料到畫面上
+    function renderData(data) {
+        document.getElementById('displayBalance').innerText = "$ " + data.balance.toLocaleString();
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = ''; 
+        
+        if (data.history.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">尚無紀錄</td></tr>';
+            return;
+        }
+
+        data.history.forEach(item => {
+            let actionClass = item.action === '存入' ? 'action-in' : 'action-out';
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-size: 12px; color: #777;">${item.time}</td>
+                <td class="${actionClass}">${item.action}</td>
+                <td>${item.amount.toLocaleString()}</td>
+                <td style="font-weight: bold;">${item.balance.toLocaleString()}</td>
+                <td>${item.note}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 重新抓取資料 (新增紀錄後呼叫)
+    function loadData() {
+        fetch(GAS_URL + "?pwd=" + encodeURIComponent(userPassword))
+            .then(response => response.json())
+            .then(data => renderData(data));
+    }
+
+    // 提交新增紀錄表單
+    document.getElementById('recordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "處理中...";
+        submitBtn.disabled = true;
+
+        const formData = new URLSearchParams(new FormData(this));
+        // 把密碼偷偷塞進表單資料裡一起送出
+        formData.append("pwd", userPassword);
+
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
+        .then(response => response.text())
+        .then(data => {
+            if(data === "Success") {
+                alert("✅ 紀錄已成功新增！");
+                document.getElementById('recordForm').reset();
+                loadData(); 
+            } else {
+                alert("❌ 發生錯誤：" + data);
+            }
+            submitBtn.innerText = "新增紀錄";
+            submitBtn.disabled = false;
+        })
+        .catch(error => {
+            alert("❌ 發生錯誤，請重試！");
+            submitBtn.innerText = "新增紀錄";
+            submitBtn.disabled = false;
+        });
+    });
+</script>
+
+</body>
+</html>
